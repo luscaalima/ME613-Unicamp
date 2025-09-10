@@ -15,7 +15,17 @@ options(digits = 3)
 ```
 
 ```{r load, include=FALSE}
+#Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
 library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
+library(knitr)
+library(dplyr)
+library(kableExtra)
 ```
 
 
@@ -31,8 +41,40 @@ Considere como variável resposta a altura (`Height`) e como variável preditora
 ## Atividades
 
 1. Leia o conjunto de dados no R e faça um gráfico de dispersão entre altura e largura do palmo. Comente.
+```{r}
+dados = read_delim("handheight.txt", show_col_types = FALSE)
+head(dados)
+#Palmo da mão
+x =  dados$HandSpan 
+#Altura
+y=dados$Height
+
+obs = nrow(dados)
+
+# Criando um  gráfico de dispersão para poder visualizar melhor  o tamanho do palmo da mão entre a idade (variável preditora X) e a altura (variável resposta Y)
+
+ ggplot(dados, aes(x = dados$HandSpan, y = dados$Height)) +
+  geom_point(color = "blue", size = 2) +
+  labs(title = "Gráfico de Dispersão: Palmo da Mão x Altura",
+       x = "Palmo da Mão",
+       y = "Altura  ") +
+  theme_minimal()
+
+```
+
 
 2. Ajuste o modelo de regressão linear simples utilizando a função `lm()` e apresente os resultados. **Dica**: use a função `summary()`.
+```{r}
+# SINTAXE DA FUNÇÃO LM
+# modelo_ajustado = lm(variavel_resposta ~ variavel_preditora)
+# modelo_ajustado = lm(variavel_resposta ~ preditores)  
+  
+fit <- lm(Height ~ HandSpan, data = dados)
+names(fit)
+
+
+
+```
 
 
 3. Apresente a tabela ANOVA e identifique nesta tabela as somas de quadrados $SQReg$, $SQE$ e $SQT$. Qual a estimativa da variância $\sigma^2$?  **Dica**: use a função `anova()`.

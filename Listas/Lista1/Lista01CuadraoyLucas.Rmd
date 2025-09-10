@@ -1,0 +1,435 @@
+---
+title: "Ejercicio Practico"
+prof: "Tatiana Benaglia"
+alunos: "Lucas Lima 263267,Daniela Cielo 298825"
+date: " Lista 01 - 2S2025 - 03/09/2025"
+
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+install.packages("kableExtra")
+```
+
+### Introdução
+
+O diretor de admissões de uma pequena faculdade nos EUA selecionou aleatoriamente **120 alunos** da
+nova turma de ingressantes para determinar se o \(GPA\) (*Grade Point Average*) no final do primeiro ano
+pode ser predito a partir da pontuação do teste \(ACT\).  
+
+Os dados utilizados para a análise estão disponíveis no arquivo **gpa.txt**.
+
+
+```{r}
+#Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
+library(knitr)
+library(dplyr)
+library(kableExtra)
+
+
+```
+
+## Carga do dados
+
+```{r}
+# Leer archivo sin encabezado
+dados_gpa <- read.table("gpa.txt", header = FALSE)
+
+# Renombrar columnas
+colnames(dados_gpa) <- c("GPA", "ACT")
+
+# Ver las primeras filas
+head(dados_gpa)
+
+```
+```{r}
+library(ggplot2)
+
+ggplot(dados_gpa, aes(x = ACT, y = GPA)) +
+  geom_point(color = "blue", size = 2) +
+  labs(
+    title = "Gráfico de Dispersão: ACT x GPA",
+    x = "ACT",
+    y = "GPA"
+  ) +
+  theme_minimal()
+
+```
+
+a) Considerando um modelo de regressão linear simples e utilizando as estatísticas abaixo, calcule as estimativas de ˆβ0 e ˆβ1 usando as fórmulas obtidas em 1a). Comente a relação do coeficiente angular estimado com o que você observa no gráfico de dispersão´
+ 
+```{r}
+# Entradas del enunciado
+n     <- 120
+sumX  <- 2967
+sumX2 <- 75739
+sumY  <- 368.886
+sumXY <- 9213.11
+
+# Estadísticos muestrales
+x_barra <- sumX / n
+y_barra <- sumY / n
+sxx <- sumX2 - (sumX^2) / n
+sxy <- sumXY - (sumX * sumY) / n
+
+# Estimadores OLS
+beta1 <- sxy / sxx
+beta0 <- y_barra - beta1 * x_barra
+
+c(beta0 = beta0, beta1 = beta1)
+
+```
+
+### Interpretação da relação do coeficiente angular estimado com o gráfico de dispersão
+
+Segundo os cálculos realizados, obteve-se \(\hat{\beta}_1 = 0.0388\).  
+Isso significa que a **inclinação da reta de regressão é positiva**, indicando que, em média, quanto maior for o valor do \(ACT\), maior será o valor esperado de \(GPA\).  
+
+No gráfico de dispersão, essa relação é visível: os pontos formam uma **nuvem com tendência ascendente**, ou seja, à medida que o \(ACT\) aumenta (movendo-se para a direita no eixo \(x\)), o \(GPA\) tende a assumir valores mais altos (subindo no eixo \(y\)).
+
+
+
+b) O mesmo modelo de regressão linear simples pode ser ajustado usando algum software, como por exzemplo o R através da função lm(). Apresente o ajuste desse modelo usando algum software e compare com as estimativas obtidas em a).
+
+```{r}
+dados <- read.table("gpa.txt", header = FALSE)
+colnames(dados) <- c("GPA", "ACT")
+
+# Ajuste do modelo via lm()
+modelo <- lm(GPA ~ ACT, data = dados)
+
+# Resultados do ajuste
+summary(modelo)
+
+```
+### Comparação
+
+Quando ajustamos o modelo com a função `lm()`, confirmamos os valores que calculamos no inciso (a).  
+O intercepto \(\beta_0 = 2.11405\) e a inclinação \(\beta_1 = 0.03883\).  
+
+Como foi explicado no primeiro inciso, em média um aumento de um ponto no \(ACT\) está associado com um incremento de 0.03883 pontos no \(GPA\), o que se mostra no gráfico.  
+
+O valor-\(p\) que está associado à inclinação (0.0029) mostra que a relação entre \(ACT\) e \(GPA\) é estatisticamente significativa.  
+Embora o coeficiente de determinação \(R^2 = 0.076\) nos mostre que só 7.6% da variabilidade do \(GPA\) é explicada pelo \(ACT\), por isso, mesmo sendo significativa, a predição do modelo é baixa e é muito provável que outros fatores intervenham e não foram incluídos.
+
+ 
+c) Escreva a função de regressão estimada e interprete os coeficientes.
+```{r}
+b0 <- coef(modelo)[1]
+b1 <- coef(modelo)[2]
+
+eq <- sprintf("GPA_hat = %.5f + %.5f * ACT", b0, b1)
+eq
+```
+### Interpretação dos Coeficientes
+
+\(\beta_1 = 0.03883\) significa que, para cada ponto adicional no \(ACT\), o \(GPA\) médio esperado aumenta nessa quantidade.  
+
+\(\beta_0 = 2.11405\) significa o valor médio de \(GPA\) quando \(ACT = 0\).  
+Na prática isso não é realista, mas é necessário para definir a posição da reta de regressão.
+
+
+d) Reproduza o gráfico de dispersão acima, adicionando a reta de regressão estimada.
+ 
+```{r}
+# Gráfico de dispersão com reta de regressão
+library(ggplot2)
+
+ggplot(dados_gpa, aes(x = ACT, y = GPA)) +
+  geom_point(color = "blue", size = 2) +
+  geom_abline(intercept = coef(modelo)[1], # β0 estimado
+              slope = coef(modelo)[2],     # β1 estimado
+              color = "red", linewidth = 1) +
+  labs(title = "Gráfico de Dispersão com Reta de Regressão",
+       x = "Pontuação ACT",
+       y = "GPA") +
+  theme_minimal()
+```
+
+e) Encontre uma estimativa para a variância dos erros σ2.
+
+
+```{r}
+dados_gpa <- read.table("gpa.txt", header = FALSE)
+
+# Renombrar columnas
+colnames(dados_gpa) <- c("GPA", "ACT")
+
+modelo <- lm(GPA ~ ACT, data = dados)
+
+# 1) Cálculo "a mano": SQE y s^2 = SQE/(n-2)
+residuos <- residuals(modelo)
+SQE <- sum(residuos^2)
+n <- nrow(dados)
+sigma2_hat_manual <- SQE / (n - 2)
+
+# 2) Vía summary(): (residual standard error)^2 = MSE = s^2
+sigma2_via_summary <- summary(modelo)$sigma^2   # equivalente a (summary(modelo)$sigma)^2
+
+# 3) Vía ANOVA: último Mean Sq (residual) = s^2
+sigma2_via_anova <- tail(anova(modelo)[["Mean Sq"]], 1)
+
+c(
+  sigma2_hat_manual = sigma2_hat_manual,
+  sigma2_via_summary = sigma2_via_summary,
+  sigma2_via_anova = sigma2_via_anova
+)
+```
+### Interpretação
+
+Neste inciso foi calculada a estimativa da variância dos erros \(\sigma^2\) no modelo de regressão linear simples.  
+A variância dos erros é obtida a partir da soma dos quadrados dos resíduos (SQE), dividida pelos graus de liberdade \(n-2\), já que dois parâmetros (\(\beta_0\) e \(\beta_1\)) foram estimados.  
+
+O valor encontrado para \(\hat{\sigma}^2\) representa a variabilidade média **não explicada pela reta de regressão**, ou seja, o quanto os valores observados de \(GPA\) se desviam, em média, dos valores ajustados pelo modelo.  
+
+Quanto menor for essa estimativa, melhor é a qualidade do ajuste, pois significa que os pontos estão mais próximos da reta estimada.  
+
+No presente caso, o valor obtido indica que, embora exista uma relação positiva e estatisticamente significativa entre \(ACT\) e \(GPA\), ainda há uma quantidade considerável de variabilidade que não é explicada pelo modelo, o que está de acordo com o baixo valor de \(R^2\) encontrado anteriormente.
+
+ 
+f) Faça uma análise gráfica dos resíduos e comente se as suposições do modelo são satisfeitas.
+```{r}
+dados_gpa <- read.table("gpa.txt", header = FALSE)
+
+# Renombrar columnas
+colnames(dados_gpa) <- c("GPA", "ACT")
+
+modelo <- lm(GPA ~ ACT, data = dados)
+
+# Gráfico de resíduos vs valores ajustados
+plot(modelo$fitted.values, residuals(modelo),
+     xlab = "Valores ajustados (ŷ)",
+     ylab = "Resíduos",
+     main = "Resíduos vs Ajustados")
+abline(h = 0, col = "red", lwd = 2)
+
+# Histograma dos resíduos
+hist(residuals(modelo),
+     main = "Histograma dos resíduos",
+     xlab = "Resíduos",
+     col = "lightblue", border = "black")
+
+# QQ-plot para normalidade
+qqnorm(residuals(modelo))
+qqline(residuals(modelo), col = "red", lwd = 2)
+
+# Ou simplesmente usar gráficos padrão do R:
+par(mfrow = c(2,2))
+plot(modelo)
+par(mfrow = c(1,1))
+
+```
+
+### Interpretação
+
+No **primeiro gráfico (Resíduos vs Ajustados)** pode-se observar que os resíduos estão dispersos em torno da linha vermelha (que representa zero), sem um padrão curvo marcado. Isso indica que a relação entre \(GPA\) e \(ACT\) pode ser considerada aproximadamente linear, embora exista uma certa dispersão desigual em alguns intervalos.  
+
+No **segundo gráfico (Histograma dos resíduos)** nota-se que a maioria dos resíduos se concentra em torno de 0, apresentando uma distribuição aproximadamente simétrica, ainda que com caudas mais longas para valores negativos. Isso sugere que a suposição de normalidade dos erros é razoavelmente aceitável.  
+
+No **terceiro gráfico (QQ-plot)** observa-se que a maioria dos pontos está próxima da linha vermelha, o que confirma a evidência do histograma: os resíduos podem ser considerados aproximadamente normais.
+
+
+No **quarto gráfico (Resíduos vs Leverage)** pode-se observar que a maioria dos pontos se encontra em uma zona segura, sem observações com alta influência, o que indica que não há outliers influentes no ajuste do modelo.  
+
+Com base na análise desses gráficos, pode-se concluir que as principais hipóteses do modelo linear (média zero, linearidade, homocedasticidade e normalidade aproximada) são razoavelmente satisfeitas.  
+Existem pequenos desvios nas caudas da distribuição dos resíduos, mas não parecem suficientes para invalidar o modelo.  
+
+Assim, o ajuste linear simples \(GPA \sim ACT\) pode ser considerado adequado, ainda que sua capacidade explicativa seja limitada (conforme o baixo valor de \(R^2\) observado anteriormente).
+ 
+
+
+g) Teste a hipótese de que existe uma relação linear entre GPA e ACT usando o teste t. Considere α =0.05.
+
+```{r}
+dados_gpa <- read.table("gpa.txt", header = FALSE)
+
+# Renombrar columnas
+colnames(dados_gpa) <- c("GPA", "ACT")
+
+modelo <- lm(GPA ~ ACT, data = dados)
+
+# Obtenemos los coeficientes y errores estándar
+summary_modelo <- summary(modelo)
+beta1_hat <- coef(summary_modelo)[2,1]   # estimativa beta1
+se_beta1  <- coef(summary_modelo)[2,2]   # erro padrão beta1
+t_obs     <- coef(summary_modelo)[2,3]   # t calculado
+p_value   <- coef(summary_modelo)[2,4]   # p-valor
+
+# Valor crítico para α = 0.05 (bicaudal)
+n <- nrow(dados)
+t_crit <- qt(0.975, df = n-2)
+
+c(
+  beta1_hat = beta1_hat,
+  se_beta1 = se_beta1,
+  t_obs = t_obs,
+  t_crit = t_crit,
+  p_value = p_value
+)
+
+```
+### Interpretação
+
+Temos as seguintes hipóteses:  
+
+\[
+H_0: \beta_1 = 0 \quad \text{(não existe relação linear entre GPA e ACT)}
+\]  
+
+\[
+H_1: \beta_1 \neq 0 \quad \text{(existe relação linear entre GPA e ACT)}
+\]  
+
+Como temos \(T_{obs} = 3.04\), que é maior que \(T_{crit} = 1.98\), rejeitamos \(H_0\).  
+
+Comparando com o valor-\(p = 0.0029\), que é menor que 0.05, também rejeitamos \(H_0\) ao nível de significância de 5%.  
+
+Portanto, pode-se concluir que existe evidência estatisticamente significativa para confirmar que há uma relação linear positiva entre \(ACT\) e \(GPA\).
+
+
+h) Encontre um intervalo de 95% de confiança para o coeficiente angular da reta. Com base neste intervalo, você diria que o coeficiente angular é nulo? Justifique e compare com a conclusão do item g). 
+```{r}
+# Intervalo de confiança de 95% para beta1
+confint(modelo, level = 0.95)
+
+```
+### Interpretação
+
+Com base no intervalo de confiança de 95% para o coeficiente angular \(\beta_1\), obtido no R como \((0.0135,\; 0.0641)\), concluímos que esse intervalo **não contém o valor 0**.  
+Isso significa que existe evidência suficiente para afirmar que a inclinação da reta de regressão não é nula, ou seja, há uma relação linear significativa e positiva entre \(ACT\) e \(GPA\): a cada ponto adicional no \(ACT\), o \(GPA\) médio tende a aumentar.  
+
+Esse resultado coincide com o teste \(t\) do item (g), no qual já havíamos rejeitado a hipótese nula:  
+
+\[
+H_0: \beta_1 = 0
+\]  
+
+Assim, tanto o teste de hipóteses quanto o intervalo de confiança levam à mesma conclusão: a variável \(ACT\) contribui de forma significativa para explicar a variação do \(GPA\).
+
+
+i) Obtenha a tabela ANOVA abaixo e aplique o teste F para verificar se o coeficiente angular da reta é nulo, considerando α = 0.05? Apresente as hipóteses, estatística do teste, p-valor e conclusão.Qual a relação do p-valor deste teste com o p-valor obtido no item g)?
+
+```{r}
+# ANOVA da regressão
+anova_modelo <- anova(modelo)
+anova_modelo
+
+# Estatística F e p-valor
+F_obs <- anova_modelo$`Mean Sq`[1] / anova_modelo$`Mean Sq`[2]
+p_valor_F <- pf(F_obs, df1 = 1, df2 = n-2, lower.tail = FALSE)
+
+c(F_obs = F_obs, p_valor_F = p_valor_F)
+
+```
+### Teste F via ANOVA
+
+Para verificar se o coeficiente angular da regressão é nulo, aplicou-se a análise de variância (ANOVA) ao modelo GPA ~ ACT. As hipóteses testadas foram:
+
+$$H_0: \beta_1 = 0 \quad \text{(não existe relação linear entre ACT e GPA)}$$  
+
+$$H_1: \beta_1 \neq 0 \quad \text{(existe relação linear entre ACT e GPA)}$$  
+
+A decomposição da soma dos quadrados resultou em:
+
+- $SQ_{Reg} = 2.85$ (soma dos quadrados da regressão, gl = 1)  
+- $SQE = 36.35$ (soma dos quadrados do erro, gl = 118)  
+- $SQT = 39.20$ (soma total dos quadrados, gl = 119)  
+
+Os quadrados médios foram calculados como:  
+
+- $QM_{Reg} = SQ_{Reg}/1 = 2.85$  
+- $QM_{Res} = SQE/118 \approx 0.308$  
+
+Assim, a estatística F é:  
+
+$$F = \frac{QM_{Reg}}{QM_{Res}} = \frac{2.85}{0.308} \approx 9.24$$  
+
+com **p-valor = 0.0029**.  
+
+Como $p < 0.05$, rejeitamos a hipótese nula $H_0: \beta_1 = 0$. Concluímos que existe evidência de uma relação linear significativa entre ACT e GPA.  
+
+Por fim, observa-se que o p-valor deste teste F coincide exatamente com o obtido no teste t do item (g). Isso ocorre porque, em regressão linear simples, os dois testes são matematicamente equivalentes, dado que $F = t^2$. Portanto, ambos os procedimentos levam à mesma conclusão.
+
+
+j) Calcule o coeficiente de determinação R2 e interprete-o.
+```{r}
+# Leer los datos
+dados_gpa <- read.table("gpa.txt", header = FALSE)
+
+# Renombrar columnas
+colnames(dados_gpa) <- c("GPA", "ACT")
+
+# Ajustar el modelo con el dataset correcto
+modelo <- lm(GPA ~ ACT, data = dados_gpa)
+
+# Método 1: directo del summary()
+summary(modelo)$r.squared
+
+# Método 2: cálculo manual
+y <- dados_gpa$GPA
+y_hat <- fitted(modelo)         # valores ajustados
+y_bar <- mean(y)                # media de Y
+
+SQT <- sum((y - y_bar)^2)       # Soma de Quadrados Total
+SQE <- sum((y - y_hat)^2)       # Soma de Quadrados dos Erros
+SQReg <- SQT - SQE              # Soma de Quadrados da Regressão
+
+R2_manual <- SQReg / SQT
+R2_manual
+
+```
+### Coeficiente de Determinação \(R^2\)
+
+O coeficiente de determinação obtido foi:
+
+\[
+R^2 = 0.0726 \approx 7.26\%
+\]
+
+Isso significa que aproximadamente **7.26\% da variação observada no GPA pode ser explicada linearmente pelo ACT**.  
+
+Em outras palavras, embora exista uma associação estatisticamente significativa entre ACT e GPA (conforme indicado pelos testes \(t\) e \(F\)), a **força explicativa do modelo é baixa**, já que mais de 92\% da variabilidade do GPA não é explicada pela variável ACT.  
+
+Portanto, conclui-se que o ACT contribui para prever o GPA, mas outros fatores não incluídos no modelo desempenham papel mais relevante no desempenho acadêmico.
+
+k) Mostre a relação entre R2 e o coeficiente de correlação de Pearson entre ACT e GPA.
+ 
+```{r}
+# Correlação de Pearson entre GPA e ACT
+r <- cor(dados_gpa$ACT, dados_gpa$GPA)
+
+# Comparação
+R2_via_r <- r^2
+c(r = r, R2_via_r = R2_via_r, R2_modelo = summary(modelo)$r.squared)
+
+```
+ ### Relação entre \(R^2\) e a Correlação de Pearson
+
+Na regressão linear simples, vale a relação:
+
+\[
+R^2 = r^2
+\]
+
+onde \(r\) é o coeficiente de correlação de Pearson entre ACT e GPA.  
+
+Calculando no R, obteve-se:
+
+\[
+r = 0.269 \quad \Rightarrow \quad r^2 = 0.0726
+\]
+
+que coincide exatamente com o valor de \(R^2\) encontrado anteriormente.  
+
+Isso confirma que, no caso de regressão linear simples, o coeficiente de determinação \(R^2\) nada mais é do que o quadrado da correlação linear entre as variáveis.
+

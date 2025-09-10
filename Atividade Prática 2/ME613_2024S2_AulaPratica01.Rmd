@@ -1,0 +1,465 @@
+---
+title: "ME613A - Análise de Regressão"
+prof: "Tatiana Benaglia"
+alunos: "Lucas Lima 263267,Daniela Cielo 298825"
+date: "Atividade Prática 01 - 2S2025 - 27/08/2025"
+
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+## Introdução 
+
+Uma empresa de pesquisa (Last Resource, Inc., Bellefonte, PA) fez um estudo para verificar qual a relação entre a idade do motorista e a distância que ele consegue enxergar bem. 
+
+Foi coletada uma amostra de $n = 30$ motoristas, na qual perguntaram a idade do motorista e mediram a distância (em pés) que eles conseguiam enxergar bem um sinal de trânsito. Esses dados estão disponíveis no Moodle, no arquivo chamado *signdist.txt*.
+
+
+
+```{r}
+#Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
+library(knitr)
+library(dplyr)
+library(kableExtra)
+```
+
+## Atividade
+
+1. Leia o conjunto de dados no R e faça um gráfico de dispersão para visualizar a relação entre a idade (variável preditora $X$) e distância (variável resposta $Y$).
+```{r}
+dados = read_delim("signdist.txt", show_col_types = FALSE)
+head(dados)
+
+#Idade
+x =  dados$Age
+#Distância
+y=dados$Distance
+
+obs = nrow(dados)
+
+# Criando um  gráfico de dispersão para poder visualizar melhor  a relação entre a idade (variável preditora X) e distância (variável resposta Y)
+
+ ggplot(dados, aes(x = dados$Age, y = dados$Distance)) +
+  geom_point(color = "blue", size = 2) +
+  labs(title = "Gráfico de Dispersão: Idade x Distância",
+       x = "Idade  (Anos) ",
+       y = "Distância  (Pés) ") +
+  theme_minimal()
+
+```
+
+
+2. Calcule as estatísticas descritivas das variáveis e também o coeficiente de correlação entre elas.
+```{r}
+
+dados %>%  
+    summary() %>%  
+    kable(caption = "Table1a 1. Estatisticas Sumarias") %>%  
+    kable_styling(full_width = F, position = "center")
+
+correlaction = round(cor(dados$Age, dados$Distance),3)
+# Média Idade
+x_barra = round(mean(dados$Age),2)
+y_barra = round(mean(dados$Distance),2)
+
+# Variância
+var_x = round(var(dados$Age),2)
+var_y = round(var(dados$Distance),2)
+
+# Desvio padrão
+desvio_padrao_x =round(sd(dados$Age),2)
+desvio_padrao_y =round(sd(dados$Distance),2)
+
+```
+
+A correlação entre idade e distância é **`r correlaction`**
+
+Médias:  
+
+ A média de idade é **`r x_barra`**  
+ A média de distância é **`r y_barra`**
+ 
+Variâncias:  
+
+ A variância da idade é **`r var_x`**  
+ A variância da distância é **`r var_y`**
+ 
+Desvio Padrão:  
+
+ O desvio padrão da idade é **`r desvio_padrao_x`**  
+ O desvio padrão da distância é **`r desvio_padrao_y`**
+
+
+3. Utilizando o R como uma calculadora simples, calcule as estatísticas de interesse que serão posteriormente utizadas para encontrar os estimadores de $\beta_0$ e $\beta_1$. 
+```{r}
+
+# Numerador e denominador de beta1
+numerador <- sum((x - x_barra) * (y - y_barra))
+denominador <- sum((x - x_barra)^2)
+
+# Cálculo manual de beta1 y beta0
+beta1 <- numerador / denominador
+beta0 <- y_barra - beta1 * x_barra
+
+# Mostrar resultados
+# beta1
+# beta0
+```
+#**Estimadores:**  
+
+#$\beta_0$ =  **`r beta0`**  
+#$\beta_1$ =  **`r beta1`**
+
+
+
+4. Usando as estatísticas do item anterior, escreva uma função que, para um dado conjunto de dados, retorna as estimativas de $\hat \beta_0$ e $\hat \beta_1$. **Nota**: não usar a função `lm()`.
+```{r}
+
+# Função para calcular os coeficientes manualmente
+calcular_betas <- function(x, y) {
+  x_barra_2 <- mean(x)
+  y_barra_2 <- mean(y)
+  
+  numerador <- sum((x - x_barra_2) * (y - y_barra_2))
+  denominador <- sum((x - x_barra_2)^2)
+
+  beta_1 <- numerador / denominador
+  beta_0 <- y_barra_2 - beta_1 * x_barra_2
+  
+  return(c(beta0 = beta_0, beta1 = beta_1))
+}
+
+calcular_betas(dados$Age,dados$Distance)
+
+
+```
+
+
+5. Ajuste o modelo de regressão linear simples utilizando a função `lm()` e compare os resultados obtidos no item 3. **Dica**: use as funções `summary()` ou `coef()` para visualizar os coeficientes estimados.
+```{r}
+# Agora comparamos os estimadores que encontramos de forma manual com os encontrados da função lm()
+calcular_betas(dados$Age,dados$Distance)
+
+modelo <- lm(dados$Distance ~ dados$Age, data = dados)
+# Visualizar os coeficientes
+coef(modelo)
+summary(modelo)
+```
+
+6. Apresente um gráfico de dispersão dos dados juntamente com a reta de regressão ajustada. Escreva um parágrafo com as interpretação dos parâmetros. **Nota**: utilize a função `geom_abline()`. Você não deve usar a função `geom_smooth()`.
+
+```{r}
+#coef(modelo)[1] BETA_ZERO
+#coef(modelo)[2] BETA_UM
+
+coeficiente_linear <- round(coef(modelo)[1],2)
+coeficiente_angular <- round(coef(modelo)[2],2)
+
+
+
+ggplot(dados, aes(x = dados$Age, y = dados$Distance)) +
+    geom_point(color = "blue", size = 2, alpha = 0.7) + 
+    geom_abline(
+        intercept = coeficiente_linear,
+        slope = coeficiente_angular,
+        color = "red",
+        linewidth = 1,
+        linetype = "solid"
+    ) +
+    labs(
+        title = "Reta de Regressão Linear Ajustada",
+        subtitle = paste("Equação : Distancia =", round(coeficiente_linear, 2), "+", round(coeficiente_angular, 2), "* Idade"),
+        x = "Idade (Anos)",
+        y = "Distância (Metros)"
+    ) +
+    theme_minimal() +
+    theme(
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5)
+    )
+
+
+
+```
+
+
+
+**INTERPRETAÇÃO DOS COEFICIENTES:**
+
+**O coeficiente linear ($\beta_0$ = 576,68 unidades)** representa o valor teórico máximo de alcance visual para um indivíduo com idade zero,sendo o ponto de partida da reta de regressão. Este valor corresponde ao  maior alcance visual possível  na ausência de influência do fator envelhecimento.
+
+**O coeficiente angular ($\beta_1$ = -3,01 unidades/ano)** indica que a cada ano adicional de idade, ocorre uma redução média de 3,01 unidades no alcance visual. Esta taxa de declínio demonstra o efeito cumulativo do envelhecimento sobre a capacidade visual.
+
+Em termos práticos: Enquanto o intercepto estabelece o potencial visual teórico inicial(Uma pessoa com zero anos de idade), o coeficiente angular quantifica o impacto(relação entre idade e o alcance visual) progressivo do envelhecimento, resultando em uma perda gradual do alcance  visual  ao longo dos anos.
+
+
+7. Utilizando as fórmulas dadas em aula, encontre as estimativas das variâncias de $\varepsilon$, $\beta_0$ e $\beta_1$. Verifique os cálculos com os resultados apresentados na tabela dos coeficientes estimados obtida no R.
+```{r}
+
+#varepsilon = MSE
+ summary(lm(dados$Distance ~ dados$Age, data = dados))
+#Sxx - Soma dos Quadrados de X
+sxx <- sum((x - x_barra)^2)
+#Sxy - Soma dos Produtos Cruzados
+sxy <- sum((x - x_barra) * (y - y_barra))
+#Syy - Soma dos Quadrados de Y
+syy <- sum((y - y_barra)^2)
+
+b1 <- sxy / sxx
+b0 <- mean(y) - beta1 * mean(x)
+
+
+# Previsões e resíduos
+y_hat <- b0 + b1 * x
+residuos <- y - y_hat
+SQE <- sum(residuos^2)
+
+# Variância do erro σ²
+s2 <- SQE / (obs - 2)
+
+# Variâncias dos coeficientes
+var_beta1 <- s2 / sxx
+var_beta0 <- s2 * (1/obs + x_barra^2 / sxx)
+
+# Erros padrão
+se_beta0 <- sqrt(var_beta0)
+se_beta1 <- sqrt(var_beta1)
+
+```
+
+
+**Estimativas:**   
+
+#Variância de $\varepsilon$ = **`r s2`**
+  
+#Variância de $\beta_0$ = **`r var_beta0`**  
+  
+#Variância de $\beta_1$ = **`r var_beta1`**
+
+
+
+
+
+8. Encontre os intervalos de confiança de 90% para $\beta_0$ e $\beta_1$ da seguinte forma:
+    (a) usando as fórmulas dadas em aula
+```{r}
+
+coeficientes <- coef(modelo)
+erros <- summary(modelo)$coefficients[, 2]
+
+# Graus de liberdade
+gl <- obs - 2
+
+# Valor crítico t para 90% de confiança
+t_critico <- qt(0.95, df = gl)
+
+# Intervalo de confiança para β0 (intercepto)
+ic_b0 <- coeficientes[1] + c(-1, 1) * t_critico * erros[1]
+cat("IC 90% manual para intercepto:", round(ic_b0[1], 2), "-", round(ic_b0[2], 2), "\n")
+
+
+# Intervalo de confiança para  β1 coeficiente angular
+ic_b1 <- coeficientes[2] + c(-1, 1) * t_critico * erros[2]
+cat("IC 90% manual para coeficiente angular:", round(ic_b1[1], 2), "-", round(ic_b1[2], 2), "\n")
+
+```
+(b) usando a função `confint()`
+```{r}
+# Usando confint():
+#para beta0 e beta1
+confint(modelo, level=0.90)
+```
+**Intervalos de confiança** 
+     
+Intervalo de confiança de 90% para $\beta_0$  [**`r ic_b0[1]`**  ;  **`r ic_b0[2]`**]
+
+
+Intervalo de confiança de 90% para $\beta_1$  [**`r ic_b1[1]`**  ;  **`r ic_b1[2]`**]  
+    
+
+
+9. Apresente um teste de hipótese para verificar se o coeficiente $\beta_1$ é nulo o, u não, usando o seguinte:
+    (a) Teste t
+```{r}
+#H0: beta1 = 0
+#H1: beta1 !=0
+#alfa: 5%
+
+resumo <- summary(modelo)
+
+t_estatistico <- resumo$coefficients[2, 3]
+p_valor <- resumo$coefficients[2, 4]
+
+# 1) Valores previstos y residuos
+y_previsto <- beta0 + beta1 * dados$Age
+residuos   <- dados$Distance - y_previsto
+
+# 2) Varianza residual para inferencia: s^2 = SSE / (n - 2)
+SSE <- sum(residuos^2)
+s2  <- SSE / (obs - 2)       # <-- en lugar de mean(residuos^2)
+
+# 3) Teste t para H0: beta1 = 0
+se_beta1  <- sqrt(s2 / sxx)
+tobservado <- beta1 / se_beta1
+tcritico   <- qt(p = 0.05/2, df = obs - 2, lower.tail = FALSE)
+
+teste_t <- function(tobservado, tcritico){
+  if (abs(tobservado) > tcritico) {
+    print("Rejeito H0 considerando o nivel de significancia de 5%")
+  } else {
+    print("Não rejeito a Hipotese nula considerando o nivel de significancia de 5%")
+  }
+}
+teste_t(tobservado, tcritico)
+
+```
+**Existe uma relação linear estatisticamente significante entre Idade e Distância portanto o coeficiente ** $\beta_1$ **não é  nulo**
+
+
+**Estatística de teste :** **`r t_estatistico`**
+
+**p-valor :****`r  p_valor`**
+
+
+    
+    (b) Teste F
+```{r}
+#H0: beta1 = 0
+#H1: beta1 !=0
+#alfa: 5%
+
+# Componentes ANOVA y Teste F
+SST   <- sum( (dados$Distance - y_barra)^2 )   # SQT
+SSR   <- SST - SSE                             # SQReg
+QMReg <- SSR / 1
+QMRes <- SSE / (obs - 2)
+
+Fobs    <- QMReg / QMRes                       # = tobs^2
+pvalorF <- pf(Fobs, df1 = 1, df2 = obs - 2, lower.tail = FALSE)
+
+cat("Teste F:\n",
+    "F observado =", round(Fobs, 3),
+    "| gl1 = 1, gl2 =", obs - 2,
+    "| p-valor =", signif(pvalorF, 5), "\n")
+
+# Verificación de la equivalencia F = t^2
+c(F_observado = Fobs, t2 = tobservado^2)  # usa tobsservado o renombra a 'tobservado'
+# (y la ANOVA del modelo de R)
+# anova(model_distancia)
+anova(modelo)
+```
+
+
+**O modelo de regressão é estatisticamente significante e nesse caso rejeitamos a hipotese nula ** $\beta_1$ **não é  nulo**
+
+**p-valor :****`r  p_valor`** **<**$\alpha$
+
+10. Calcule o coeficiente de determinação $R^2$ e interprete-o.
+
+```{r}
+# Somas de quadrados
+
+SST <- sum( (y - y_barra)^2 )   # SQT (total)
+SSR <- SST - SQE                 # SQReg (regressão)
+
+# R^2 manual
+R2 <- SSR / SST
+R2
+
+# (opcional) R^2 ajustado, por si quieres reportarlo también:
+R2_ajustado <- 1 - (SQE / (obs - 2)) / (SST / (obs - 1))
+R2_ajustado
+
+# Verificación com o lm:
+summary(modelo)$r.squared
+summary(modelo)$adj.r.squared
+```
+
+**INTERPRETAÇÃO DE $R^2$:**
+
+O coeficiente de determinação $R^2$ é uma medida estatística que indica o quão bem o modelo de regressão se ajusta aos dados observados, ou seja, explica-nos quanto da variável dependente pode ser explicado pelas variáveis independentes. No nosso caso, a variável dependente é a distância visual dos motociclistas e a variável independente é a idade do motociclista. De acordo com os cálculos realizados, o  $R^2$ é de 0,64, o que interpretamos como 64% da variabilidade da distância em que os motociclistas podem ver um sinal pode ser explicada pela idade dos motociclistas. O fato de ser 64% significa que a idade é um fator importante que influencia a distância visual que um motociclista é capaz de perceber, mas também indica que existem outros fatores não observados que influenciam a capacidade do motociclista.
+
+
+
+11. Centralize a variável preditora em sua média e ajuste uma regressão simples novamente. Compare o resultado com aquele obtido no item 4.
+
+```{r}
+
+# 1) Crear la X centrada
+dados$Age_c <- dados$Age - x_barra
+
+# 2) Ajustar el modelo centrado
+modelo_c <- lm(Distance ~ Age_c, data = dados)
+
+# 3) Coeficientes del modelo centrado
+b0_c <- coef(modelo_c)[1]
+b1_c <- coef(modelo_c)[2]
+
+# 4) Comparaciones clave con el ítem 4
+comp_betas <- rbind(
+  original = c(beta0 = b0,      beta1 = b1),
+  centrado = c(beta0 = b0_c,    beta1 = b1_c),
+  esperado = c(beta0 = y_barra, beta1 = b1)  # teoría con X centrada
+)
+comp_betas
+
+# 5) Comprobar que Age_c tiene media 0
+mean_Age_c <- mean(dados$Age_c)
+
+# 6) Verificar que el ajuste esencial no cambia
+#    (mismos fitted y mismos residuos; mismo R^2)
+eq_fitted   <- all.equal(fitted(modelo),  fitted(modelo_c))
+eq_residuos <- all.equal(residuals(modelo), residuals(modelo_c))
+R2_orig     <- summary(modelo)$r.squared
+R2_cent     <- summary(modelo_c)$r.squared
+
+list(
+  mean_Age_c = mean_Age_c,
+  fitted_iguais = eq_fitted,
+  residuos_iguais = eq_residuos,
+  R2_original = R2_orig,
+  R2_centrado = R2_cent
+)
+```
+**Comparando com o item 4:**
+No item 4, o modelo de regressão linear simples ajustado com a idade original resultou em **$\beta_0$=576,68** e **$\beta_1$=−3,0068**. O que, em teoria, explica que um motociclista de 0 anos teria uma distância visual de 576 pés, o que não faz sentido prático, enquanto cada ano adicional de idade reduz em média 3 pés da distância de visibilidade. Nesta seção, ao centrar a variável idade em torno de sua média, o modelo manteve a mesma inclinação **$\beta_1$=−3,0068**; isso confirma que o efeito da idade sobre a distância não muda. Mas a interceptação passou a ser $\beta_0$=423,33, que é o valor que coincide aproximadamente com a média da distância. Dessa forma, a interceptação agora representa a distância média de visibilidade para um motorista de idade média na amostra; isso torna a interpretação mais realista e coerente. Quando observamos os dois modelos, o coeficiente de determinação é o mesmo ($R^2$), o que indica que aproximadamente 64,2% da variabilidade na distância visual é explicada pela idade. 
+
+
+
+12. Se você transformar a distância de pés para metros, como isso afeta os coeficientes da regressão? Note que 1 pé = 0,3048 metros.
+
+```{r}
+# Conversión de pies a metros
+factor <- 0.3048
+
+# Coeficientes originales en pies
+b0_pies <- 576.68
+b1_pies <- -3.0068
+
+# Coeficientes convertidos a metros
+b0_metros <- b0_pies * factor
+b1_metros <- b1_pies * factor
+
+c(beta0_metros = b0_metros,
+  beta1_metros = b1_metros)
+
+```
+**Interpretação em Metros:**
+Após converter a distância em metros:
+
+A interceptação passa a ser a distância média de um motociclista de 0 anos (teórico) em 176 metros. A inclinação indica que, para cada ano adicional de idade, a distância de visibilidade diminui em média 0,915 metros. O ajuste do modelo ($R^2$) não muda, porque a relação linear entre as variáveis continua a mesma; apenas mudam as unidades de medida da variável resposta.
+

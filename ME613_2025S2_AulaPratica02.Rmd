@@ -1,0 +1,66 @@
+---
+title: "ME613A - Análise de Regressão"
+author: "Profa. Tatiana Benaglia"
+date: "Atividade Prática 02 - 2S2025 - 10/09/2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+options(digits = 3)
+```
+
+```{r load, include=FALSE}
+library(tidyverse)
+```
+
+
+## Introdução: Relação entre palmo e altura
+
+Será que a medida do seu palmo está associada com a sua altura? 
+
+Para verificar esta possível relação, foram medidas a largura do palmo e a altura (em polegadas) de 167 estudantes universitários. Também registraram o gênero do estudante. Os dados estão no arquivo `handheight.txt` em anexo.
+
+Considere como variável resposta a altura (`Height`) e como variável preditora a larura do palmo (`HandSpan`).
+
+
+## Atividades
+
+1. Leia o conjunto de dados no R e faça um gráfico de dispersão entre altura e largura do palmo. Comente.
+
+2. Ajuste o modelo de regressão linear simples utilizando a função `lm()` e apresente os resultados. **Dica**: use a função `summary()`.
+
+
+3. Apresente a tabela ANOVA e identifique nesta tabela as somas de quadrados $SQReg$, $SQE$ e $SQT$. Qual a estimativa da variância $\sigma^2$?  **Dica**: use a função `anova()`.
+
+4. Apresente um gráfico de dispersão dos dados juntamente com a reta de regressão ajustada, usando a função `geom_smooth()`. Escreva um parágrafo com as interpretação dos parâmetros. 
+
+5. Faça a análise de resíduos. Vamos começar pelos gráficos descritos no itens abaixo. O que você observa? Existe alguma tendência aparente nos gráficos?
+
+    a) Resíduos versus a variável preditora.
+    b) Resíduos versus valores peditos.
+
+6. Analise a suposição de normalidade dos resíduos das seguintes formas:
+
+    a) Graficamente: boxplot, histograma e QQ-plot. Comente.
+    b) Teste de hipótese. Escolha um teste apropriado, aplique e comente.
+
+7. Verifique através de um teste de hipótese a suposição de homocedasticidade.
+    
+8. É possível aplicar o teste F de falta de ajuste para esse dados? Se sim, apresente a tabela ANOVA com a decomposição da SQE em SQFA e SQEp. Indique quais hipóteses estão sendo testadas, a estatística do teste e conclusão.
+
+
+9. Depois de verificar as suposições do modelo através da análise dos resíduos, faça agora um teste de hipótese para checar se a relação linear entre `HandSpan` e `Height` é significativa.
+
+
+10. Qual é a altura média de estudantes cuja largura do palmo é 17, 21 e 24 polegadas, respectivamente. Apresente também um intervalo de 95% de confiança para estes casos e compare-os. **Dica**: usar a função `predict()`.
+
+   
+11. Para um novo estudante, qual a estimativa de sua altura dado que sua largura do palmo é 17, 21 e 24 polegadas, respectivamente. Apresente também um intervalo de predição de 95% para esses casos. Compare com os intervalos de confiança obtidos no item anterior. **Dica**: usar a função `predict()` modificando o arguemnto `interval`.
+
+
+12. Apresente um gráfico de dispersão, juntamente com a reta ajustada e a banda de confiança para estimação da resposta média e o intervalo de predição para uma nova observação, ambos com nível de confiança de 95%.

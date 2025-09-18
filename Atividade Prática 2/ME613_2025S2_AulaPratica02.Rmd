@@ -3,10 +3,9 @@ title: "ME613A - Análise de Regressão"
 author: "Profa. Tatiana Benaglia"
 date: "Atividade Prática 02 - 2S2025 - 10/09/2025"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
-
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
@@ -15,17 +14,17 @@ options(digits = 3)
 ```
 
 ```{r load, include=FALSE}
-#Importando bibliotecas
+library(tidyverse)
 library(ggplot2)
 library(readr)
 library(tidyr)
-library(tidyverse)
 library(stringr)
 library(magrittr)
 library(lubridate)
 library(knitr)
 library(dplyr)
 library(kableExtra)
+library(lmtest)
 ```
 
 
@@ -40,69 +39,413 @@ Considere como variável resposta a altura (`Height`) e como variável preditora
 
 ## Atividades
 
-1. Leia o conjunto de dados no R e faça um gráfico de dispersão entre altura e largura do palmo. Comente.
+1. Leia o conjunto de dados no R e faça um gráfico de dispersão entre altura e largura do palmo.Comente.
 ```{r}
-dados = read_delim("handheight.txt", show_col_types = FALSE)
-head(dados)
-#Palmo da mão
-x =  dados$HandSpan 
-#Altura
-y=dados$Height
+# Leer archivo sin encabezado
+dados_hand <- readr::read_table("handheight.txt")
 
-obs = nrow(dados)
+# Ver las primeras filas
+head(dados_hand)
 
-# Criando um  gráfico de dispersão para poder visualizar melhor  o tamanho do palmo da mão entre a idade (variável preditora X) e a altura (variável resposta Y)
-
- ggplot(dados, aes(x = dados$HandSpan, y = dados$Height)) +
-  geom_point(color = "blue", size = 2) +
-  labs(title = "Gráfico de Dispersão: Palmo da Mão x Altura",
-       x = "Palmo da Mão",
-       y = "Altura  ") +
-  theme_minimal()
-
+# Dispersión Height vs HandSpan
+ggplot(dados_hand, aes(x = HandSpan, y = Height)) +
+  geom_point(alpha = 0.7) +
+  labs(x = "Largura do palmo (HandSpan, pol.)", y = "Altura (Height, pol.)",
+       title = "Dispersão: Altura vs Largura do Palmo")
 ```
 
 
-2. Ajuste o modelo de regressão linear simples utilizando a função `lm()` e apresente os resultados. **Dica**: use a função `summary()`.
+**Interpretação do Gráfico**
+No nosso gráfico, o eixo X é a largura do palmo e o eixo Y é a altura da pessoa. Pode-se observar como se forma uma linha com tendência positiva, o que nos leva a crer que, quanto maior a largura do palmo, maior será a altura. A nuvem pode ser considerada razoavelmente homogênea, sem curvatura.
+
+
+
+
+2. Ajuste o m de regressão linear simples utilizando a função `lm()` e apresente os resultados. **Dica**: use a função `summary()`.
+
 ```{r}
-# SINTAXE DA FUNÇÃO LM
-# modelo_ajustado = lm(variavel_resposta ~ variavel_preditora)
-# modelo_ajustado = lm(variavel_resposta ~ preditores)  
-  
-fit <- lm(Height ~ HandSpan, data = dados)
-names(fit)
-
-
-
+m <- lm(Height ~ HandSpan, data = dados_hand)
+summary(m)
 ```
 
 
 3. Apresente a tabela ANOVA e identifique nesta tabela as somas de quadrados $SQReg$, $SQE$ e $SQT$. Qual a estimativa da variância $\sigma^2$?  **Dica**: use a função `anova()`.
+```{r}
+anova(m)
+tabela_anova <- anova(m)
+
+# A estimativa da variância σ² é o Mean Square Residual (Quadro Médio dos Resíduos)
+estimativa_sigma2 <- tabela_anova["Residuals", "Mean Sq"]
+# Verificando os cálculos
+sqt <- sum((dados_hand$HandSpan - mean(dados_hand$HandSpan))^2)
+sqreg <- sum((fitted(m) - mean(dados_hand$HandSpan))^2)
+sqe <- sum(residuals(m)^2)
+
+```
+
+
+**Interpretação da Tabela**
+
+$SQReg = 1500$
+
+$SQE = 1243$
+
+E como sabemos pela teoria, **$SQT$** é a soma dos valores de **$SQReg$** e **$SQE$**, ou seja  **$SQReg$ + $SQE$ =   $2743$**.
+
+A estimativa da variância $\sigma^2$ é o quadrado médio do Erro (QME), isto é, a Soma de Quadrados do Erro dividida pelos seus graus de liberdade; neste caso, o número de estudantes menos 2, ou seja, $gl_E = 165$.
+
+Portanto, a estimativa da variância $\sigma^2$ é $7{,}533$.
+
+
+
+
 
 4. Apresente um gráfico de dispersão dos dados juntamente com a reta de regressão ajustada, usando a função `geom_smooth()`. Escreva um parágrafo com as interpretação dos parâmetros. 
+```{r}
+ggplot(dados_hand, aes(x = HandSpan, y = Height)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE) +  # banda = IC(95%) para la media E[Y|X]
+  labs(
+    title = "Dispersão com reta de regressão: Height ~ HandSpan",
+    x = "HandSpan (pol.)",
+    y = "Height (pol.)"
+  ) +
+  theme_minimal()
+
+```
+
+**Interpretação da Tabela**
+O gráfico de dispersão mostra uma relação linear e positiva entre a largura do palmo e a altura. 
+A reta ajustada representa a média \(E(Y \mid X)\) do modelo \(Y=\beta_0+\beta_1 X+\varepsilon\).
+Da saída do \textit{inciso} 2, vemos que a reta ajustada é \(Y=35{,}525+1{,}560\,X\), cujo coeficiente angular é \(\beta_1=1{,}560\) e o intercepto \(\beta_0=35{,}525\); isto é a altura média estimada quando \(X=0\) (sem sentido prático; a interpretação é apenas algébrica).
+A faixa sombreada é o IC(95\%) para a resposta média \(E(Y \mid X)\); é mais estreita perto da média de \(X\) e se alarga ao se afastar, como prevê a variância de \(\hat{Y}_h\).
 
 5. Faça a análise de resíduos. Vamos começar pelos gráficos descritos no itens abaixo. O que você observa? Existe alguma tendência aparente nos gráficos?
 
     a) Resíduos versus a variável preditora.
     b) Resíduos versus valores peditos.
+```{r}
+
+m   <- lm(Height ~ HandSpan, data = dados_hand)
+res <- residuals(m)
+fit <- fitted(m)
+
+# 5a) Residuos vs variable predictora
+plot(dados_hand$HandSpan, res,
+     xlab = "HandSpan (pol.)", ylab = "Residuos",
+     main = "Residuos vs Variavel Preditora")
+abline(h = 0, lty = 2)
+
+# 5b) Residuos vs valores predichos
+plot(fit, res,
+     xlab = "Valores preditos", ylab = "Residuos",
+     main = "Residuos vs valores preditos")
+abline(h = 0, lty = 2)
+
+```
+*Interpretação Dos Gráficos*
+
+\paragraph{a) Resíduos versus a variável preditora.}
+A nuvem está centrada em torno de 0, não tem curvaturas nem inclinações, portanto não há tendência aparente. A dispersão é mais ou menos constante ao longo de \textit{HandSpan}, com alguns resíduos extremos (cerca de $\pm 7$). Em conjunto, o gráfico é consistente com a linearidade de \(E(Y \mid X)\) e com homocedasticidade aproximada.
+
+\paragraph{b) Resíduos versus valores preditos.}
+A nuvem também está centrada em torno de 0 e não apresenta curvaturas nem inclinações, de modo que não há evidência de não linearidade do m. Também não se observa formação de ``cone'' que indique heterocedasticidade, confirmando o do primeiro inciso: a variabilidade é mais ou menos constante, o que é compatível com homocedasticidade. Em conclusão, o gráfico respalda que os pressupostos de linearidade e de variância aproximadamente constante são razoáveis.
+
+
 
 6. Analise a suposição de normalidade dos resíduos das seguintes formas:
 
     a) Graficamente: boxplot, histograma e QQ-plot. Comente.
     b) Teste de hipótese. Escolha um teste apropriado, aplique e comente.
+```{r}
+res <- residuals(m)
+par(mfrow=c(1,3))
+boxplot(res, main="Boxplot dos resíduos")
+hist(res, main="Histograma dos resíduos", xlab="Resíduos")
+qqnorm(res); qqline(res)
+par(mfrow=c(1,1))
+
+```
+
+**Interpretação Dos Gráficos**
+
+\textbf{a) Graficamente: boxplot, histograma e QQ-plot. Comente.}
+
+\textbf{Boxplot:} está centrado perto de 0 e é bastante simétrico; aparecem poucos pontos extremos nas caudas. Isso sugere que os resíduos não apresentam assimetrias marcantes.
+
+\textbf{Histograma:} pode-se ver que forma aproximadamente uma campana, centrada em 0, coerente com a distribuição normal dos resíduos.
+
+\textbf{QQ-plot:} pode-se ver como os pontos seguem bem a reta de regressão, com alguns desvios nas caudas, sem apresentar curvaturas.
+
+b) Teste de hipótese. Escolha um teste apropriado, aplique e comente.
+```{r}
+# Asumiendo que ya ajustaste:
+# m <- lm(Height ~ HandSpan, data = dados_hand)
+
+# 1) Residuos crudos
+res <- residuals(m)           # o: res <- resid(m)
+shapiro.test(res)
+
+# (opcional) Residuos estandarizados
+rstd <- rstandard(m)
+shapiro.test(rstd)
+
+# (opcional) Mini-reporte automático
+p <- shapiro.test(res)$p.value
+cat(sprintf("Shapiro–Wilk p-valor = %.4f -> %s\n",
+            p, ifelse(p < 0.05, "rechazo de normalidad", "no se rechaza normalidad")))
+
+```
+
+Escolhemos o teste de Shapiro--Wilk; o que nos importa verificar é a hipótese de que os erros (e portanto os resíduos) seguem uma Normal. Seu estatístico baseia-se na correlação entre os resíduos ordenados e os quantis normais esperados; se a correlação é alta, há evidência de normalidade.
+
+**Hipóteses**
+
+$H_0$:os erros (e portanto os resíduos) seguem uma Normal,
+
+$H_1$:não normalidade.
+
+
+**Resultados do teste**
+Aplicado aos resíduos brutos e aos padronizados, obtenho
+\(W \approx 0{,}993\) e \(p \approx 0{,}571\) em ambos os casos.
+
+Decisão (\(\alpha=0{,}05\)): não se rejeita $H_0$.
+
+Conclusão.A evidência é consistente com normalidade dos resíduos,
+em coerência com o diagnóstico gráfico (boxplot, histograma e QQ-plot), onde
+os pontos seguem razoavelmente a reta.
+
+
 
 7. Verifique através de um teste de hipótese a suposição de homocedasticidade.
+```{r}
+#Hipóteses do Teste:
+#H₀: Homocedasticidade (variância constante dos resíduos)
+#H₁: Heterocedasticidade (variância não constante dos resíduos)
+# Teste de Breusch-Pagan para homocedasticidade
+
+# Executar o teste
+bp_test <- bptest(m)
+cat("Teste de Breusch-Pagan para homocedasticidade:\n")
+print(bp_test)
+
+# Nível de significância
+alpha <- 0.05
+
+# Interpretação
+if (bp_test$p.value > alpha) {
+  cat("CONCLUSÃO: Não rejeitamos hipotese nula. Não há evidências de heterocedasticidade (p =", 
+      round(bp_test$p.value, 4), ").\n")
+  cat("A suposição de homocedasticidade é satisfeita.\n")
+} else {
+  cat("CONCLUSÃO: Rejeitamos a hipotese nula. Há evidências de heterocedasticidade (p =", 
+      round(bp_test$p.value, 4), ").\n")
+  cat("A suposição de homocedasticidade NÃO é satisfeita.\n")
+}
+
+# Gráficos para verificar homocedasticidade
+par(mfrow = c(2, 2))
+# 1. Resíduos vs Valores Ajustados
+plot(fitted(m), residuals(m), 
+     main = "Resíduos vs Valores Ajustados",
+     xlab = "Valores Ajustados", ylab = "Resíduos",
+     pch = 19, col = "blue")
+abline(h = 0, col = "red", lwd = 2)
+lines(lowess(fitted(m), residuals(m)), col = "green", lwd = 2)
+
+# 2. Resíduos vs Altura
+plot(dados_hand$Height, residuals(m),
+     main = "Resíduos vs Altura",
+     xlab = "Altura", ylab = "Resíduos",
+     pch = 19, col = "blue")
+abline(h = 0, col = "red", lwd = 2)
+lines(lowess(dados_hand$Height, residuals(m)), col = "green", lwd = 2)
+
+# 3. Scale-Location Plot
+sqrt_abs_resid <- sqrt(abs(residuals(m)))
+plot(fitted(m), sqrt_abs_resid,
+     main = "Scale-Location Plot",
+     xlab = "Valores Ajustados", ylab = "√(|Resíduos|)",
+     pch = 19, col = "blue")
+lines(lowess(fitted(m), sqrt_abs_resid), col = "green", lwd = 2)
+
+# 4. Resíduos por Sexo
+boxplot(residuals(m) ~ dados_hand$Sex,
+        main = "Resíduos por Sexo",
+        xlab = "Sexo", ylab = "Resíduos",
+        col = c("pink", "lightblue"))
+abline(h = 0, col = "red", lwd = 2)
+```
+
+
+
+**Interpretação dos Resultados:**
+Os gráficos e testes estatísticos permitem avaliar se a variância dos resíduos é constante:
+
+No gráfico "Resíduos vs Valores Ajustados", os pontos devem estar aleatoriamente dispersos em torno de zero
+
+A linha verde (lowess) deve ser aproximadamente horizontal
+
+Valores de p > 0.05 no teste de Breusch-Pagan indicam homocedasticidade
+
+**Conclusão**: 
+
+**Não rejeitamos $H_0$.** Não há evidências de heterocedasticidade **(p = 0.339 ).**
+A suposição de homocedasticidade é satisfeita.
+
+
+
+
+
     
 8. É possível aplicar o teste F de falta de ajuste para esse dados? Se sim, apresente a tabela ANOVA com a decomposição da SQE em SQFA e SQEp. Indique quais hipóteses estão sendo testadas, a estatística do teste e conclusão.
+```{r}
+replic_count <- dados_hand %>% group_by(HandSpan) %>% summarise(n = n()) %>% arrange(desc(n))
+head(replic_count, 10)
+
+if (any(replic_count$n > 1)) {
+  # Existem  replicações:  entao podemos comparar o modelo linear com um modelo que trata HandSpan como fator
+  modelo_fac <- lm(Height ~ factor(HandSpan), data = dados_hand)
+  # ANOVA comparando modelos (modelo linear vs modelo saturado por níveis de HandSpan)
+  anova_compare <- anova(m, modelo_fac)
+  print(anova_compare)
+  # Explicação:
+  # - H0: o modelo linear é adequado (não há falta de ajuste).
+  # - H1: há falta de ajuste (modelo categórico explica significativamente mais).
+  # - Se p-valor associado à diferença for pequeno, rejeitamos H0 => falta de ajuste.
+} else {
+  message("Não existem replicações de HandSpan => teste formal de falta de ajuste F NÃO é aplicável.")
+}
+
+```
+
+**Hipóteses do Teste**
+
+$H_0$: O modelo de regressão linear (HandSpan ~ Height + Sex) é adequado e NÃO há falta de ajuste (AS MEDIDAS  DE CADA PALMO PODEM SER EXPLICADAS POR UMA RETA)
+
+$H_1$: O modelo de regressão linear NÃO é adequado.Existe uma falta de ajuste (as médias por valor de palmo não estão bem representadas pela reta).
+
+A tabela ANOVA compara o modelo linear simples com um modelo mais flexível, no qual HandSpan é tratado como fator (permitindo uma média para cada valor distinto).
+O p-valor obtido (0.77) é muito maior que 0.05, indicando que não há evidência de falta de ajuste.
+Isso significa que o modelo linear é adequado para explicar a relação entre HandSpan e Height, já que um modelo mais complexo não melhora significativamente o ajuste.
+
+Portanto, não rejeitamos $H_0$ e concluímos que a reta linear é suficiente para descrever os dados.
 
 
-9. Depois de verificar as suposições do modelo através da análise dos resíduos, faça agora um teste de hipótese para checar se a relação linear entre `HandSpan` e `Height` é significativa.
 
+9. Depois de verificar as suposições do m através da análise dos resíduos, faça agora um teste de hipótese para checar se a relação linear entre `HandSpan` e `Height` é significativa.
+```{r}
+#H0: beta1 = 0 (não há relação linear entre HandSpan e Height).
+#H1: beta1 !=0 (existe relação linear significativa).
+#alfa: 5%
+anova(m)
+summary(m)
+
+# olhar p-valor do coeficiente HandSpan e o F-statistic
+
+# Interpretação:
+# - H0: β1 = 0 (não há relação linear entre HandSpan e Height).
+# - Se o p-valor do coeficiente HandSpan < 0.05 (ou nível escolhido), rejeitamos H0 e
+#   concluímos que existe relação linear significativa.
+
+```
+
+
+Após o ajuste do modelo de regressão linear simples entre altura (Height) e largura do palmo , foi realizado um teste de hipótese para verificar se existe relação linear significativa entre as variáveis. O teste considera:
+
+$H_0$: $\beta_1$ = 0 não há relação linear entre o palmo e a  altura
+
+$H_1$:  $\beta_1$ != 0 Existe uma  relação linear entre o palmo e a  altura
+
+Os resultados do **summary(m)** mostram que o coeficiente associado a HandSpan foi estimado em **1.560** com **erro padrão de 0.111** , resultando em um valor-t de 14.1 e **valor-p menor que 2e-16** . Como o valor-p é muito inferior ao nível de significância usual de 5%, **rejeita-se a hipótese nula** . Portanto, conclui-se que existe uma relação linear estatisticamente significativa entre a largura do palmo e a altura dos estudantes
+
+Além disso, o coeficiente de determinação **$R^2$=0.547** indica que aproximadamente 54,7% da variação da altura pode ser explicada pela largura do palmo, o que evidencia a relevância do modelo.
 
 10. Qual é a altura média de estudantes cuja largura do palmo é 17, 21 e 24 polegadas, respectivamente. Apresente também um intervalo de 95% de confiança para estes casos e compare-os. **Dica**: usar a função `predict()`.
 
+```{r}
+# Novos valores de HandSpan
+novos <- data.frame(HandSpan = c(17, 21, 24))
+
+# Previsão com intervalos de confiança (95%)
+predict(m, novos, interval = "confidence", level = 0.95)
+
+```
+
+
+
+**Explicação dos resultados:**
+
+O valor fit corresponde à estimativa da altura média esperada para um estudante com determinada largura do palmo.
+
+Os valores lwr e upr representam os limites inferior e superior do intervalo de confiança de 95% para essa média estimada.
+
+Esses intervalos de confiança refletem a incerteza associada à estimativa da média. Eles tendem a ser mais estreitos em torno da média dos valores observados de palmo, onde há maior concentração de dados, e mais largos em regiões afastadas, refletindo maior incerteza ao extrapolar para valores extremos de palmo
    
 11. Para um novo estudante, qual a estimativa de sua altura dado que sua largura do palmo é 17, 21 e 24 polegadas, respectivamente. Apresente também um intervalo de predição de 95% para esses casos. Compare com os intervalos de confiança obtidos no item anterior. **Dica**: usar a função `predict()` modificando o arguemnto `interval`.
+```{r}
+predict <- predict(m, novos, interval = "prediction", level = 0.95)
+predict
+```
+
+
+
+**Explicação:**
+
+O intervalo de predição (prediction interval) fornece uma faixa onde esperamos que uma nova observação individual caia, dado o valor do palmo (HandSpan).
+
+Ele é mais largo que o intervalo de confiança da média, porque leva em conta tanto a incerteza na estimativa dos coeficientes quanto a variabilidade individual (erro aleatório).
+
+Comparando com o item anterior (intervalos de confiança para a média), os intervalos de predição são sempre maiores, refletindo a maior incerteza ao prever um indivíduo específico em vez da média.
 
 
 12. Apresente um gráfico de dispersão, juntamente com a reta ajustada e a banda de confiança para estimação da resposta média e o intervalo de predição para uma nova observação, ambos com nível de confiança de 95%.
+
+```{r}
+dados <- readr::read_table("handheight.txt")
+
+grid <- data.frame(HandSpan = seq(min(dados$HandSpan),
+                                  max(dados$HandSpan),
+                                  length.out = 200))
+
+pred_conf <- predict(m, newdata = grid, interval = "confidence", level = 0.95)
+pred_pred <- predict(m, newdata = grid, interval = "prediction", level = 0.95)
+
+# Juntar resultados no grid
+grid <- cbind(grid, pred_conf)
+colnames(grid)[2:4] <- c("fit", "lwr_conf", "upr_conf")
+grid$lwr_pred <- pred_pred[, "lwr"]
+grid$upr_pred <- pred_pred[, "upr"]
+
+# Plot
+ggplot() +
+  geom_point(data = dados, aes(x = HandSpan, y = Height), color = "black", alpha = 0.6) +
+  geom_line(data = grid, aes(x = HandSpan, y = fit), color = "red", size = 1) +
+  geom_ribbon(data = grid, aes(x = HandSpan, ymin = lwr_conf, ymax = upr_conf),
+              alpha = 0.25, fill = "blue") +   # banda de confiança para a média
+  geom_ribbon(data = grid, aes(x = HandSpan, ymin = lwr_pred, ymax = upr_pred),
+              alpha = 0.12, fill = "brown") + # banda de predição para nova obs
+  labs(title = "Ajuste linear com IC da média (azul) e IP para nova observação (marrom)",
+       x = "HandSpan (polegadas)",
+       y = "Height (polegadas)") +
+  theme_minimal()
+
+```
+**Descrição do gráfico:**
+
+Os pontos pretos representam os dados observados de altura em função da largura do palmo (HandSpan).
+
+A linha vermelha corresponde à reta ajustada pelo modelo linear, ou seja, a estimativa pontual da altura para cada valor de HandSpan.
+
+A faixa azul indica o intervalo de confiança de 95% para a média da altura, mostrando onde esperamos que a média da população esteja para cada valor de HandSpan.
+
+A faixa marrom representa o intervalo de predição de 95% para uma nova observação individual, ou seja, a faixa onde é mais provável que caia a altura de um novo estudante com o HandSpan correspondente.
+
+**Observações importantes:**
+
+O intervalo de predição é sempre mais largo que o intervalo de confiança, pois incorpora não apenas a incerteza do modelo, mas também a variabilidade individual dos dados.
+
+Ambas as faixas (IC e IP) são mais estreitas próximas à média dos valores de HandSpan e tendem a se alargar nas extremidades, refletindo maior incerteza na predição para valores fora do centro da amostra.
+
+Este gráfico permite visualizar simultaneamente a relação linear entre HandSpan e Height, a incerteza na estimativa da média e a variabilidade esperada em novos indivíduos.

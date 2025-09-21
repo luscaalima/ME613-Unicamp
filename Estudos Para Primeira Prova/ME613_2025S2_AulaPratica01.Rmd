@@ -1,0 +1,301 @@
+---
+title: "ME613A - Análise de Regressão"
+author: "Profa. Tatiana Benaglia"
+date: "Atividade Prática 01 - 2S2025 - 27/08/2025"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+#Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
+library(knitr)
+library(dplyr)
+library(kableExtra)
+```
+
+## Introdução 
+
+Uma empresa de pesquisa (Last Resource, Inc., Bellefonte, PA) fez um estudo para verificar qual a relação entre a idade do motorista e a distância que ele consegue enxergar bem. 
+
+Foi coletada uma amostra de $n = 30$ motoristas, na qual perguntaram a idade do motorista e mediram a distância (em pés) que eles conseguiam enxergar bem um sinal de trânsito. Esses dados estão disponíveis no Moodle, no arquivo chamado *signdist.txt*.
+
+
+## Atividade
+
+1. Leia o conjunto de dados no R e faça um gráfico de dispersão para visualizar a relação entre a idade (variável preditora $X$) e distância (variável resposta $Y$).
+
+```{r}
+dados <- read.table("signdist.txt", header = TRUE)
+#view(dados)
+#head(dados)
+
+## Y (distancia) e a minha variavel resposta  e X (idade) e minha variavel preditora que e utiizada para prever a distancia 
+
+
+#Criando o grafico de dispersao
+ggplot(dados, aes(x = Age, y = Distance)) +
+  geom_point(color = "blue", size = 3, alpha = 0.7) +
+  labs(title = "Relação entre Idade e Distância de Visão",
+       x = "Idade (anos)", 
+       y = "Distância (pés)") +
+  theme_minimal()
+```
+
+
+2. Calcule as estatísticas descritivas das variáveis e também o coeficiente de correlação entre elas.
+
+```{r}
+
+dados %>%  
+    summary() %>%  
+    kable(caption = "Table1a 1. Estatisticas Sumarias") %>%  
+    kable_styling(full_width = F, position = "center")
+
+
+x = dados$Age
+y = dados$Distance
+
+x_barra = mean(x)
+desvio_padrao_x =sd(x)
+x_median = median(x)
+x_variancia = var(x)
+
+y_barra = mean(y)
+desvio_padrao_y =sd(y)
+y_median = median(y)
+y_variancia = var(y)
+
+correlacao = cor(x, y)
+```
+
+
+**Médias:**  
+
+ A média de idade é **`r x_barra`**  
+ A média de distância é **`r y_barra`**
+ 
+**Variâncias:** 
+
+ A variância da idade é **`r x_variancia`**  
+ A variância da distância é **`r y_variancia`**
+ 
+**Desvio Padrão:** 
+
+ O desvio padrão da idade é **`r desvio_padrao_x`**  
+ O desvio padrão da distância é **`r desvio_padrao_y`**
+ 
+ A **correlação** entre idade e distância é **`r correlacao`**
+
+3. Utilizando o R como uma calculadora simples, calcule as estatísticas de interesse que serão posteriormente utizadas para encontrar os estimadores de $\beta_0$ e $\beta_1$. 
+```{r}
+
+#B0 = y_barra - B1*x_barra
+#B1 = Sxy / Sxx
+
+# Numerador e denominador de beta1
+numerador <- sum((x - x_barra) * (y - y_barra))
+denominador <- sum((x - x_barra)^2)
+
+# Cálculo manual de beta1 y beta0
+beta1 <- round((numerador / denominador),2)
+beta0 <- round((y_barra - beta1 * x_barra),2)
+
+
+```
+#**Estimadores:**  
+
+$\beta_0$ =  **`r beta0`**  
+$\beta_1$ =  **`r beta1`**
+
+4. Usando as estatísticas do item anterior, escreva uma função que, para um dado conjunto de dados, retorna as estimativas de $\hat \beta_0$ e $\hat \beta_1$. **Nota**: não usar a função `lm()`.
+
+```{r}
+
+calcular_betas <- function(x, y) {
+  
+  x_barra_2 <- mean(x)
+  y_barra_2 <- mean(y)
+  
+  numerador <- sum((x - x_barra_2) * (y - y_barra_2))
+  
+  denominador <- sum((x - x_barra_2)^2)
+
+  beta_1 <- numerador / denominador
+  
+  beta_0 <- y_barra_2 - beta_1 * x_barra_2
+  
+  return(c(beta0 = beta_0, beta1 = beta_1))
+}
+
+calcular_betas(dados$Age,dados$Distance)
+```
+
+
+5. Ajuste o modelo de regressão linear simples utilizando a função `lm()` e compare os resultados obtidos no item 3. **Dica**: use as funções `summary()` ou `coef()` para visualizar os coeficientes estimados.
+```{r}
+fit = lm(y ~ x,data = dados)
+fit$coefficients
+summary(fit)
+coef(fit)
+```
+
+6. Apresente um gráfico de dispersão dos dados juntamente com a reta de regressão ajustada. Escreva um parágrafo com as interpretação dos parâmetros. **Nota**: utilize a função `geom_abline()`. Você não deve usar a função `geom_smooth()`.
+```{r}
+
+coeficiente_linear <- round(coef(fit)[1],2)
+coeficiente_angular <- round(coef(fit)[2],2)
+# Criando o gráfico
+ggplot(dados, aes(x = x, y = y)) +
+    geom_point(color = "blue", size = 2, alpha = 0.7) + 
+    geom_abline(
+        intercept = coeficiente_linear,
+        slope = coeficiente_angular,
+        color = "red",
+        linewidth = 1,
+        linetype = "solid"
+    ) +
+    labs(
+        title = "Reta de Regressão Linear Ajustada",
+        subtitle = paste("Equação : Distancia =", round(coeficiente_linear, 2), "+", round(coeficiente_angular, 2), "* Idade"),
+        x = "Idade (Anos)",
+        y = "Distância (Metros)"
+    ) +
+    theme_minimal() +
+    theme(
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5)
+    )
+
+```
+
+7. Utilizando as fórmulas dadas em aula, encontre as estimativas das variâncias de $\varepsilon$, $\beta_0$ e $\beta_1$. Verifique os cálculos com os resultados apresentados na tabela dos coeficientes estimados obtida no R.
+
+```{r}
+n = nrow(dados)
+#varepsilon = MSE
+
+# nA variancia do erro e sigma quadrado mas desconhecemos e precisamos estima-la para encontrar sua a variancia do erro
+
+#S2 = QME = SQE/(n-2) = (sum(Yobserado-Yprevisto)^2 /(n-2))
+
+# Calcular valores preditos
+y_chapeu <- beta0 + beta1 * x
+residuos <- y - y_chapeu
+
+sxx <- sum((x - x_barra)^2)
+syy <- sum((y - y_barra)^2)
+sxy <- sum((x - x_barra) * (y - y_barra))
+
+
+SQE <- sum(residuos^2)
+
+# Variância do erro σ²
+var_ei <- (SQE / (n - 2))
+
+s2 <- (SQE / (30 - 2))
+
+# Variâncias dos coeficientes
+var_beta1 <- s2 / sxx
+var_beta0 <- s2 * ((1/30) + ((x_barra^2) / sxx))
+
+
+
+
+
+
+```
+
+8. Encontre os intervalos de confiança de 90% para $\beta_0$ e $\beta_1$ da seguinte forma:
+    (a) usando as fórmulas dadas em aula
+```{r}
+# Encontrando um intervalo de confianca na mao para. os estimadores beta_0 e beta_1
+t_critico <- qt(0.95, df = 28)
+#B0
+#B0 = y_barra-B1*x_barra
+x2= x_barra*x_barra
+erro_padrao_b0 = sqrt(s2*((1/30) + (x2/sxx)))
+
+
+intervalo_b0 =c((beta0-erro_padrao_b0*t_critico), (beta0+erro_padrao_b0*t_critico)   )
+
+#B1 = sxy/sxx
+erro_padrao_b1 = sqrt(s2/sxx)
+intervalo_b1 =c((beta1-erro_padrao_b1*t_critico), (beta1+erro_padrao_b1*t_critico)   )
+
+```
+    
+    (b) usando a função `confint()`
+```{r}
+# Usando confint():
+#para beta0 e beta1
+confint(fit, level=0.90)
+```
+    
+    
+9. Apresente um teste de hipótese para verificar se o coeficiente $\beta_1$ é nulo ou não, usando o seguinte:
+    (a) Teste t
+
+```{r}
+# Vamos realizar um teste T
+#H0 B1 = 0 ou seja nao existe uma relacao linear entre a variavel resposta e a variavel preditora
+#H1 B1 != 0 ou seja existe uma relacao linear entre a variavel resposta e a variavel preditora
+
+anova(fit)
+
+Tobs = beta1/erro_padrao_b0
+tcritico   <- qt(p = 0.05/2, df = 30 - 2, lower.tail = FALSE)
+
+if(Tobs > t_critico  ){
+  cat("Rejeita H₀")
+}else{
+  cat("Não rejeita H₀")
+}
+  
+```
+    
+    (b) Teste F
+    ```{r}
+
+anova(fit)
+#Aqui queremos testar
+#H0 B1 = 0 ou seja nao existe uma relacao linear entre a variavel resposta e a variavel preditora
+#H1 B1 != 0 ou seja existe uma relacao linear entre a variavel resposta e a variavel preditora
+#nesse caso a estatistica do teste e F* =. QMReg/QME 
+
+SQreg = sum((y_chapeu-y_barra)^2)
+
+Fobs = (SQreg/(SQE/(30-2)))
+
+F_critico <- qf(0.95, df1 = 1, df2 = 28)
+
+
+if(Fobs > F_critico  ){
+  cat("Rejeita H₀")
+}else{
+  cat("Não rejeita H₀")
+}
+
+
+
+```
+
+10. Calcule o coeficiente de determinação $R^2$ e interprete-o.
+```{r}
+R2 = SQreg/ (SQreg+SQE)
+```
+
+11. Centralize a variável preditora em sua média e ajuste uma regressão simples novamente. Compare o resultado com aquele obtido no item 4.
+
+12. Se você transformar a distância de pés para metros, como isso afeta os coeficientes da regressão? Note que 1 pé = 0,3048 metros.
+
+

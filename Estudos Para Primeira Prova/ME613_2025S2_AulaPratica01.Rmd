@@ -287,14 +287,52 @@ if(Fobs > F_critico  ){
 
 
 
-```
 
 10. Calcule o coeficiente de determinação $R^2$ e interprete-o.
 ```{r}
 R2 = SQreg/ (SQreg+SQE)
+
 ```
 
 11. Centralize a variável preditora em sua média e ajuste uma regressão simples novamente. Compare o resultado com aquele obtido no item 4.
+
+```{r}
+fit2 = lm(y~ I(x-x_barra),data=dados)
+
+
+
+
+
+coeficiente_linear <- round(coef(fit2)[1],2)
+coeficiente_angular <- round(coef(fit2)[2],2)
+# Criando o gráfico
+ggplot(dados, aes(x = x, y = y)) +
+    geom_point(color = "blue", size = 2, alpha = 0.7) + 
+    geom_abline(
+        intercept = coeficiente_linear,
+        slope = coeficiente_angular,
+        color = "red",
+        linewidth = 1,
+        linetype = "solid"
+    ) +
+    labs(
+        title = "Reta de Regressão Linear Ajustada",
+        subtitle = paste("Equação : Distancia =", round(coeficiente_linear, 2), "+", round(coeficiente_angular, 2), "* Idade"),
+        x = "Idade (Anos)",
+        y = "Distância (Metros)"
+    ) +
+    theme_minimal() +
+    theme(
+        plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.subtitle = element_text(hjust = 0.5)
+    )
+
+
+
+```
+
+
+
 
 12. Se você transformar a distância de pés para metros, como isso afeta os coeficientes da regressão? Note que 1 pé = 0,3048 metros.
 

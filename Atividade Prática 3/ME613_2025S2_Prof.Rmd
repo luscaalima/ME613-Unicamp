@@ -1,0 +1,148 @@
+---
+title: "ME613A - Análise de Regressão"
+author: "Profa. Tatiana Benaglia"
+date: "Atividade Prática 03 - 2S2025 - 08/10/2025"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+## Introdução
+
+Nesta atividade vocês irão trabalhar com modelos de regressão linear múltipla.
+
+
+## Atividade
+
+A Organização Mundial de Saúde quer verificar quais fatores influenciam a expectativa de vida. Observou-se que nos últimos 15 anos houve um enorme desenvolvimento no sector da saúde, resultando na melhoria das taxas de mortalidade humana, especialmente nas nações em desenvolvimento, em comparação com os últimos 30 anos. Portanto, neste projeto estão sendo considerados dados dos anos de 2000 a 2015 para 193 países para uma análise mais aprofundada. As variáveis preditoras representam diversos grupos de fatores, ou seja, fatores econômicos e sociais além de fatores relacionados à imunização e mortalidade. 
+
+O conjunto de dados completo está no site [Kaggle > DataSets > Life Expectancy (WHO)]( https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who/data), mas nós iremos trabalhar com um subconjunto desses dados (arquivo `LifeExpectancyModificado.csv`) que compreende 2095 observações e 11 variáveis preditoras (renomeadas), descritas a seguir:
+
+* `LifeExp`: expectativa de vida (em anos)
+* `Developed`: Status do país (Yes = Desenvolvido ou No = em desenvolvimento)
+* `Mortality`: taxa de mortalidade para adultos entre 15 e 60 anos
+* `BMI`: Índice de Massa Corporal da população
+* `Alcohol`: consumo de álcool per capita (em litros)
+* `Polio`: cobertura de imunização para Polio entre crianças
+* `HIV`: Mortes por HIV/AIDS por 1000 nascidos vivos
+* `GDP`: Produto Interno Bruto per capita (em Dólares USD)
+* `IDHComp`: IDH em termos de composição do rendimento dos recursos
+* `School`: Anos de escolaridade 
+* `InfantDeaths`: número de mortes infantis por 1000 habitantes
+* `Population`: População do país (em milhões de habitantes)
+
+O interesse está em determinar quais fatores estão relacionados à expectativa de vida e você é o Estatístico que irá analisar estes dados.
+
+Leia o conjunto de dados no R, como a seguir, e visualize as primeiras observações. Verifique se as colunas estão no formato correto.
+
+```{r}
+dados = read_csv("LifeExpectancyModificado.csv", 
+                 show_col_types = FALSE)
+library(magrittr)
+dados %<>% 
+  select(-Developed)%>%
+  filter(IDHComp > 0)
+
+dados %>% head()
+dados %>% glimpse()
+
+```
+
+1) Faça o gráfico de dispersão entre todas as variáveis contínuas do conjunto de dados e calcule a correlação entre elas. Comente.
+```{r}
+library(ggcorrplot)
+
+dados %>% cor()%>% round(2) %>%
+ ggcorrplot(method = "square", type = "upper", lab = TRUE, show.diag = TRUE)
+
+```
+
+2) Defina algum critério e escolha dois preditores contínuos, denominados $X_1$ e $X_2$. Ajuste um modelo de regressão linear simples de $Y$ com cada um dos preditores $X_1$ e $X_2$, separadamente. Interprete os coeficientes.
+
+Os preditores escolhidos foram: School e IDHComp, pelo critério de maior Correlação com LifeExp(resposta).
+```{r}
+#X1 = School
+#Gráfico de Dispersão entre LifeExp e School
+g1 <- dados %>% ggplot(aes(y = LifeExp, x = School))+
+  geom_point(color = "blue", size = 3, alpha = 0.2)+
+  theme_bw()
+
+#Ajuste de Regressão Simples
+fit1 = lm(LifeExp ~ School, data = dados)
+summary(fit1)
+
+g1 + geom_smooth(method = "lm", color = "red")
+```
+```{r}
+#X2 = IDHComp
+#Gráfico de Dispersão entre LifeExp e School
+g2 <- dados %>% ggplot(aes(y = LifeExp, x = IDHComp))+
+  geom_point(color = "blue", size = 3, alpha = 0.2)+
+  theme_bw()
+
+#Ajuste de Regressão Simples
+fit2 = lm(LifeExp ~ IDHComp, data = dados)
+summary(fit2)
+
+g2 + geom_smooth(method = "lm", color = "red")
+```
+
+
+3) Ajuste um modelo de regressão linear múltipla usando $X_1$ e $X_2$ como preditores, ou seja,
+$$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i} + \varepsilon_i.$$
+
+    Reporte as estimativas dos coeficientes e interprete-os. Qual é função de regressão estimada?
+```{r}
+
+fit12 = lm(LifeExp ~ School + IDHComp, data = dados)
+summary(fit12)
+
+```
+
+4) Para entender melhor o significado de $\beta_1$ no modelo de regressão linear múltipla, execute os passos a seguir:
+
+    a) Calcule a correlação entre $X_1$ e $X_2$.
+```{r}
+cor(dados$School, dados$IDHComp)
+```
+    b) Faça um gráfico de dispersão de $Y$ versus $X_1$, com as cores de acordo com os níveis de $X_2$.
+```{r}
+dados %>% ggplot(aes(y = LifeExp, x = School , col = IDHComp)) +
+  geom_point(size = 3, alpha = 0.2) +
+  theme_bw()+
+  scale_color_continuous(low= "blue", high = "red")
+```
+    c) Remova o efeito de $X_2$ da variável resposta $Y$. Para isso, faça a regressão de $Y$ em $X_2$ e guarde os resíduos $e_{y|x2}$.
+```{r}
+fit2 = lm(LifeExp ~ IDHComp, data = dados)
+res_yx2 = resid(fit2)
+```
+  
+
+    d) Remove o efeito de $X_2$ da variável preditora $X_1$. Para isso, faça a regressão de $X_1$ em $X_2$ e guarde os resíduos $e_{x1|x2}$.
+```{r}
+fitx1x2 = lm(School ~IDHComp, data = dados)
+res_x1x2 = resid(fitx1x2)
+```
+    
+    e) Faça a regressão dos resíduos $e_{y|x2}$ em $e_{x1|x2}$. Compare a estimativa do coeficiente angular desta regressão com a estimativa de $\beta_1$ obtida em 3).
+```{r}
+fit_res = lm(res_yx2 ~ res_x1x2)
+summary(fit_res)
+summary(fit12)
+```
+    
+    f) Faça um gráfico de dispersão de $e_{y|x2}$ versus $e_{x1|x2}$, com as cores de acordo com os níveis de $X_2$. Compare com o gráfico em (a).
+
+5) Obtenha a tabela ANOVA para o modelo de RLM obtido em 3. Use a função `anova()` do `R`.
+
+6) A partir da tabela ANOVA acima, apresente um teste de hipótese para verificar se os coeficientes $\beta_1$ e $\beta_2$ são nulos. Escreva as hipóteses, estatística do teste (fórmula, valor observado e distribuição sob $H_0$), p-valor e conclusão.
+
+7) Faça um teste t para cada um dos coeficientes $\beta_1$ e $\beta_2$. Escreva as hipóteses, estatística do teste (fórmula, valor observado e distribuição sob $H_0$), p-valor e conclusão.
+
+8) Calcule os intervalos de 95% de confiança para cada um dos $\beta_1$ e $\beta_2$. Como esses intervalos se relacionam com a conclusão dos testes t feitos no item anterior?

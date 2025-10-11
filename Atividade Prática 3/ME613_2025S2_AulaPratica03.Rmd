@@ -13,9 +13,30 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 ```
 
 ```{r, include=FALSE}
+#Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
 library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
 library(knitr)
+library(dplyr)
 library(kableExtra)
+library(GGally)
+library(ggplot2)
+
+## names(dados_continuos)
+###
+
+cores_base <- c("#ABD9E9", "#2C7BB6")
+paleta_completa <- colorRampPalette(c("#E8F4FD", "#ABD9E9", "#2C7BB6", "#1A4A7A"))
+cores_padrao <- c(
+  "#E8F4FD", "#D4ECFA", "#C0E4F8", "#ABD9E9", 
+  "#7BC3E0", "#4DADD7", "#2C7BB6", "#1A4A7A"
+)
+
 ```
 
 ## Introdução
@@ -46,7 +67,53 @@ O interesse está em determinar quais fatores estão relacionados à expectativa
 
 Leia o conjunto de dados no R, como a seguir, e visualize as primeiras observações. Verifique se as colunas estão no formato correto.
 
+```{r}
+# Lendo o conjunto de dados 
+dados = read_csv("LifeExpectancyModificado.csv",show_col_types = FALSE)
+dados %<>% 
+  # select(-Developed)%>%
+  filter(IDHComp > 0)
+# head(dados)
+```
+
+
 1) Faça o gráfico de dispersão entre todas as variáveis contínuas do conjunto de dados e calcule a correlação entre elas. Comente.
+
+
+
+```{r exibir_questao, echo=FALSE, fig.cap="Matriz de dispersão - Questão 1", out.width="90%", fig.align='center'}
+# Este chunk exibe a imagem salva sem mostrar o código
+knitr::include_graphics("matriz_dispersao.png")
+```
+
+
+```{r mostrar_codigo, eval=FALSE, echo=TRUE}
+
+dados_continuos <- dados[,sapply(dados, is.numeric)]
+
+ggsave("matriz_dispersao.png", width = 12, height = 10, dpi = 300)
+
+# Criando o gráfico de dispersão entre todas as variáveis contínuas do conjunto de dados 
+ggpairs(
+  dados_continuos,
+  #title = "Matriz de dispersão entre variáveis contínuas",
+  upper = list(continuous = wrap("cor", size = 4, color = "black")),  
+  lower = list(continuous = wrap("points", alpha = 0.5, size = 2, color = "#2C7BB6")),
+  diag = list(continuous = wrap("densityDiag", fill = "#ABD9E9"))
+) +
+  theme_bw(base_size = 12) +  # aumentei base_size (antes era 10)
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    strip.text = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 8),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = "gray90"),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+```
+
 
 2) Defina algum critério e escolha dois preditores contínuos, denominados $X_1$ e $X_2$. Ajuste um modelo de regressão linear simples de $Y$ com cada um dos preditores $X_1$ e $X_2$, separadamente. Interprete os coeficientes.
 

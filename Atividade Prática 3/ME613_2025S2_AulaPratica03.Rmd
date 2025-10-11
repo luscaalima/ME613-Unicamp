@@ -26,12 +26,11 @@ library(dplyr)
 library(kableExtra)
 library(GGally)
 library(ggplot2)
+library(ggcorrplot)
 
-## names(dados_continuos)
-###
 
-cores_base <- c("#ABD9E9", "#2C7BB6")
-paleta_completa <- colorRampPalette(c("#E8F4FD", "#ABD9E9", "#2C7BB6", "#1A4A7A"))
+
+cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
 cores_padrao <- c(
   "#E8F4FD", "#D4ECFA", "#C0E4F8", "#ABD9E9", 
   "#7BC3E0", "#4DADD7", "#2C7BB6", "#1A4A7A"
@@ -70,10 +69,13 @@ Leia o conjunto de dados no R, como a seguir, e visualize as primeiras observaç
 ```{r}
 # Lendo o conjunto de dados 
 dados = read_csv("LifeExpectancyModificado.csv",show_col_types = FALSE)
+# Encontramos algumas observacoes com IDHComp = 0 
+# o que nao e muito aderente com a relidade 
+# por isso optamos por filtrar e trazer somente dados com IDHComp > 0 
 dados %<>% 
-  # select(-Developed)%>%
   filter(IDHComp > 0)
-# head(dados)
+
+dados_continuos <- dados[,sapply(dados, is.numeric)]
 ```
 
 
@@ -88,9 +90,6 @@ knitr::include_graphics("matriz_dispersao.png")
 
 
 ```{r mostrar_codigo, eval=FALSE, echo=TRUE}
-
-dados_continuos <- dados[,sapply(dados, is.numeric)]
-
 ggsave("matriz_dispersao.png", width = 12, height = 10, dpi = 300)
 
 # Criando o gráfico de dispersão entre todas as variáveis contínuas do conjunto de dados 
@@ -113,6 +112,61 @@ ggpairs(
     plot.background = element_rect(fill = "white", color = NA)
   )
 ```
+
+```{r matriz_correlacao}
+# Uma matriz de correlação é uma tabela que mostra os coeficientes de correlação entre várias variáveis.
+# Cada elemento da matriz representa a correlação entre duas variáveis. O coeficiente de correlação é uma medida estatística que expressa a força e a direção da relação linear entre duas variáveis
+
+# Propriedades da Matriz de Correlação
+
+# Simétrica: A matriz é simétrica em relação à diagonal principal. Isso porque a correlação entre a variável 
+# X e Y é a mesma entre Y e X
+
+# Cor(X,Y) = Cor(Y,X)
+
+# Diagonal Principal: Os elementos da diagonal principal são sempre 1, pois uma variável é perfeitamente correlacionada consigo mesma.
+
+matriz_cor <- round(cor(dados_continuos),2)
+ggcorrplot(
+  method = "square",
+  show.diag = TRUE,
+  matriz_cor,
+  type = "upper",
+  lab = TRUE,
+  lab_size = 2.5,
+  tl.cex = 12,           
+  tl.srt = 45,          
+  digits = 2 ,
+  colors = cores_base,
+  outline.color = "black",
+  title = "Matriz de Correlação"
+) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", color = "#1A4A7A"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+corX1_X2 = round(cor(dados$IDHComp,dados$School),2)
+```
+
+
+
+**Seleção de Preditores para a Variável Resposta LifeExp**
+
+Com base na análise da matriz de dispersão e da matriz de correlação, identificamos os preditores que apresentam as maiores correlações com a variável resposta LifeExp.
+
+
+**IDHComp: Correlação de 0,89 com LifeExp**, indicando uma relação linear positiva muito forte. Isso era esperado, uma vez que o IDHComp é uma medida que sintetiza dimensões como saúde, educação e renda, diretamente relacionadas à expectativa de vida.
+
+
+**School: Correlação de 0,78 com LifeExp**, também uma relação positiva forte. A educação é um determinante social da saúde, e maior escolaridade está associada a melhores condições de vida e, consequentemente, maior longevidade.
+
+
+**Mortality: Correlação de -0,69 com LifeExp**. Essa forte relação negativa é coerente com a realidade, pois quanto menor a mortalidade, maior a expectativa de vida. A mortalidade é um indicador inverso à sobrevivência e, portanto, deve se relacionar negativamente com a expectativa de vida.
+
+
+**Relação entre os Preditores e Multicolinearidade**
+Além das correlações com a variável resposta, observamos uma correlação muito alta entre os dois principais preditores positivos, **School e IDHComp**, com valor de **`r corX1_X2`** . Essa alta correlação indica que esses dois preditores compartilham muita informação em comum.
+
 
 
 2) Defina algum critério e escolha dois preditores contínuos, denominados $X_1$ e $X_2$. Ajuste um modelo de regressão linear simples de $Y$ com cada um dos preditores $X_1$ e $X_2$, separadamente. Interprete os coeficientes.

@@ -280,6 +280,40 @@ Além disso, os valores de \(R^2\) mostram a proporção da variabilidade de Lif
 $$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i} + \varepsilon_i.$$
 
     Reporte as estimativas dos coeficientes e interprete-os. Qual é função de regressão estimada?
+    Table: Relação entre os preditores e a variável resposta
+
+| Modelo                         | Correlação com LifeExp | \( R^2 \) |
+|:-------------------------------:|:----------------------:|:----------:|
+| \( X_1 = \text{School} \)       | 0.72                   | 0.52       |
+| \( X_2 = \text{IDHComp} \)      | 0.84                   | 0.71       |
+| \( X_1 + X_2 \) (Múltiplo)      | —                      | 0.80       |
+
+```{r}
+fiX1_X2 = lm(LifeExp ~ School+IDHComp , data=dados_continuos)
+
+
+r2_mult <- summary(fiX1_X2)$r.squared
+
+
+summary(fiX1_X2)
+summary(modeloX1)
+summary(modeloX2)
+
+## MONTAR A TABela 
+
+
+tabela_comparacao <- data.frame(
+  Modelo = c("X1 : School", "X2 :  IDHComp", "X1 + X2 (School + IDHComp)"),
+  Preditores = c("School", "IDHComp", "School e IDHComp"),
+  `Correlação com LifeExp` = c(round(cor_school, 3), round(cor_idh, 3), "-"),
+  `R²` = c(round(r2_school, 3), round(r2_idh, 3), round(r2_mult, 3))
+)
+tabela_comparacao
+
+kable(tabela_comparacao, align = "c", caption = "Comparação entre modelos de regressão simples e múltipla") |>
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover", "condensed"))
+```
+    
 
 4) Para entender melhor o significado de $\beta_1$ no modelo de regressão linear múltipla, execute os passos a seguir:
 

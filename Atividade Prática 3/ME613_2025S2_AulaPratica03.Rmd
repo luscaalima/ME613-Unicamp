@@ -5,6 +5,8 @@ date: "Atividade Prática 03 - 2S2025 - 08/10/2025"
 output:
   pdf_document: default
   html_document: default
+  
+
 ---
 
 
@@ -124,7 +126,9 @@ ggpairs(
 
 # Cor(X,Y) = Cor(Y,X)
 
-# Diagonal Principal: Os elementos da diagonal principal são sempre 1, pois uma variável é perfeitamente correlacionada consigo mesma.
+# Diagonal Principal: Os elementos da diagonal principal são sempre 1,
+# pois uma variável é perfeitamente correlacionada consigo mesma. 
+# COR(X,X) = 1
 
 matriz_cor <- round(cor(dados_continuos),2)
 ggcorrplot(
@@ -170,6 +174,107 @@ Além das correlações com a variável resposta, observamos uma correlação mu
 
 
 2) Defina algum critério e escolha dois preditores contínuos, denominados $X_1$ e $X_2$. Ajuste um modelo de regressão linear simples de $Y$ com cada um dos preditores $X_1$ e $X_2$, separadamente. Interprete os coeficientes.
+
+
+## Critério de escolha dos preditores
+
+O critério adotado para a escolha dos preditores foi baseado na correlação com a variável resposta (LifeExp). Assim, foram selecionadas as variáveis contínuas que apresentaram maior correlação linear com a minha variavel resposta pois essas tendem a ter maior poder explicativo no modelo.
+
+- `X1`: **School**  
+
+- `X2`: **IDHComp** 
+
+
+
+Esses preditores foram, então, utilizados para ajustar modelos de regressão linear simples separadamente, a fim de avaliar a relação individual de cada um com a minha variavel resposta LifeExp.
+
+```{r}
+
+# X1 =  School
+modeloX1 = lm(LifeExp  ~ School ,data = dados)
+summary(modeloX1)
+
+# X2 = IDHComp
+modeloX2 = lm(LifeExp  ~ IDHComp ,data = dados)
+summary(modeloX2)
+
+modeloX22 = lm(LifeExp  ~ I(IDHComp*100) ,data = dados)
+
+
+```
+
+
+
+ **Modelo 1: LifeExp ~ School**
+
+O intercepto ($\beta_0 = 39{,}95$) representa a expectativa de vida estimada quando a variável School é igual a zero. No entanto, essa situação não ocorre no conjunto de dados analisado, uma vez que os casos com School = 0 foram removidos durante o processo de limpeza, por não representarem valores plausíveis para a análise. Assim, o intercepto não possui interpretação prática direta, servindo apenas como referência para a reta de regressão.
+
+O coeficiente associado a School ($\beta_1 = 2{,}39$) indica que, para cada aumento de uma unidade na variável escolaridade, espera-se um acréscimo médio de aproximadamente 2,39 anos na expectativa de vida. Esse resultado confirma a existência de uma relação positiva e estatisticamente significativa entre escolaridade e expectativa de vida.
+
+O modelo apresentou um $R^2 = 0{,}60$, o que significa que cerca de 60% da variação observada na expectativa de vida (LifeExp) é explicada apenas pela variável School. Esse valor de $R^2$ indica um bom poder explicativo para um modelo univariado.
+
+
+ **Modelo 2: LifeExp ~ IDHComp**
+
+O intercepto ($\beta_0 = 35{,}10$) representa a expectativa de vida estimada para um valor hipotético de IDHComp igual a zero, servindo apenas como referência para a reta de regressão, uma vez que essa situação não ocorre na prática — nenhum país ou região apresenta IDH igual a zero.
+
+O coeficiente associado a IDHComp ($\beta_1 = 52{,}25$) indica que, para cada aumento unitário na variável, a expectativa de vida média tende a aumentar em aproximadamente 52,25 anos. Entretanto, como o IDHComp varia em uma escala de 0 a 1, um aumento de apenas 0,01 nessa variável (por exemplo, de 0,70 para 0,71) corresponde, na prática, a um acréscimo médio de 0,52 anos na expectativa de vida.
+
+Para tornar essa interpretação mais intuitiva, poderíamos reescalar o IDHComp multiplicando-o por 100, representando-o em pontos percentuais. Nesse caso, o coeficiente seria ajustado para aproximadamente 0,52, indicando que a cada aumento de 1 ponto percentual no IDHComp, espera-se um crescimento médio de 0,52 anos na expectativa de vida.
+```{r}
+modeloX22 = lm(LifeExp  ~ I(IDHComp*100) ,data = dados)
+coef(modeloX22)
+```
+
+
+O modelo apresentou um $R^2 = 0{,}785$, o que significa que cerca de 78,5% da variação observada na expectativa de vida (LifeExp) é explicada apenas pela variável IDHComp. Esse valor indica um elevado poder explicativo, superior ao do modelo com School, evidenciando que o IDHComp é um preditor mais abrangente, por incorporar dimensões relacionadas à educação, renda e saúde.
+
+
+
+
+```{r}
+
+cor_school <- cor(dados$LifeExp, dados$School)
+cor_idh    <- cor(dados$LifeExp, dados$IDHComp)
+correlacoes = c(cor_school,cor_idh)
+
+# Extrair os R² de cada modelo
+r2_school <- summary(modeloX1)$r.squared
+r2_idh    <- summary(modeloX2)$r.squared
+r2_School_IDHComp = c(r2_school,r2_idh)
+
+
+tabela_resultados <- data.frame(
+  Preditor = c("School", "IDHComp"),
+  Correlacao = correlacoes,
+  R2 = r2_School_IDHComp,
+  Coeficiente = c(2.399, 52.249),
+  SE = c(0.043, 0.609),
+  Valor_p = c("< 0.001", "< 0.001"),
+  IC_95 = c("[2.315, 2.483]", "[51.054, 53.446]")
+)
+
+
+tabela_latex <-
+  kable(tabela_resultados, 
+  format = "latex",
+  col.names = c("Preditor", "Correlação", "R²", "Coeficiente Beta", "Erro Padrão (Beta)", "Valor-p", "IC 95%"),
+  digits = 3,
+  caption = "Preditores de LifeExp",
+  align = c("l", "c", "c", "c", "c", "c", "c"),
+  booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+# Mostrar a tabela
+tabela_latex
+
+```
+
+A Tabela 1 apresenta a correlação de cada preditor contínuo selecionado com a variável resposta,(LifeExp), bem como o coeficiente de determinação (\(R^2\)) obtido ao ajustar modelos de regressão linear simples. Observa-se que ambos os preditores, School e IDHComp, apresentam correlações positivas elevadas com LifeExp, indicando que valores maiores para **School**  e **IDHComp** estão associados a maior expectativa de vida.  
+
+Além disso, os valores de \(R^2\) mostram a proporção da variabilidade de LifeExp explicada por cada preditor individualmente. School apresenta um \(R^2\) ligeiramente menor que IDHComp, sugerindo que o índice de desenvolvimento humano é um preditor mais forte isoladamente. Esses resultados fornecem uma base inicial para avaliar o potencial de cada variável na modelagem preditiva, bem como para investigar possíveis efeitos de multicolinearidade em modelos múltiplos.
+
+
 
 3) Ajuste um modelo de regressão linear múltipla usando $X_1$ e $X_2$ como preditores, ou seja,
 $$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i} + \varepsilon_i.$$

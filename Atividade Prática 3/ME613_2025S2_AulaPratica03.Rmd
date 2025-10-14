@@ -30,13 +30,11 @@ library(GGally)
 library(ggplot2)
 library(ggcorrplot)
 
-
-
 cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
-cores_padrao <- c(
-  "#E8F4FD", "#D4ECFA", "#C0E4F8", "#ABD9E9", 
-  "#7BC3E0", "#4DADD7", "#2C7BB6", "#1A4A7A"
-)
+# cores_padrao <- c(
+#   "#E8F4FD", "#D4ECFA", "#C0E4F8", "#ABD9E9", 
+#   "#7BC3E0", "#4DADD7", "#2C7BB6", "#1A4A7A"
+# )
 
 ```
 
@@ -189,7 +187,6 @@ O critério adotado para a escolha dos preditores foi baseado na correlação co
 Esses preditores foram, então, utilizados para ajustar modelos de regressão linear simples separadamente, a fim de avaliar a relação individual de cada um com a minha variavel resposta LifeExp.
 
 ```{r}
-
 # X1 =  School
 modeloX1 = lm(LifeExp  ~ School ,data = dados)
 summary(modeloX1)
@@ -197,10 +194,6 @@ summary(modeloX1)
 # X2 = IDHComp
 modeloX2 = lm(LifeExp  ~ IDHComp ,data = dados)
 summary(modeloX2)
-
-modeloX22 = lm(LifeExp  ~ I(IDHComp*100) ,data = dados)
-
-
 ```
 
 
@@ -234,13 +227,13 @@ O modelo apresentou um $R^2 = 0{,}785$, o que significa que cerca de 78,5% da va
 
 ```{r}
 
-cor_school <- cor(dados$LifeExp, dados$School)
-cor_idh    <- cor(dados$LifeExp, dados$IDHComp)
+cor_school <- round(cor(dados$LifeExp, dados$School),2)
+cor_idh    <- round(cor(dados$LifeExp, dados$IDHComp),2)
 correlacoes = c(cor_school,cor_idh)
 
 # Extrair os R² de cada modelo
-r2_school <- summary(modeloX1)$r.squared
-r2_idh    <- summary(modeloX2)$r.squared
+r2_school <- round((summary(modeloX1)$r.squared),2)
+r2_idh    <- round((summary(modeloX2)$r.squared),2)
 r2_School_IDHComp = c(r2_school,r2_idh)
 
 
@@ -270,9 +263,9 @@ tabela_latex
 
 ```
 
-A Tabela 1 apresenta a correlação de cada preditor contínuo selecionado com a variável resposta,(LifeExp), bem como o coeficiente de determinação (\(R^2\)) obtido ao ajustar modelos de regressão linear simples. Observa-se que ambos os preditores, School e IDHComp, apresentam correlações positivas elevadas com LifeExp, indicando que valores maiores para **School**  e **IDHComp** estão associados a maior expectativa de vida.  
+A Tabela 1 apresenta a correlação de cada preditor contínuo selecionado com a variável resposta,(LifeExp), bem como o coeficiente de determinação ($R^2$) obtido ao ajustar modelos de regressão linear simples. Observa-se que ambos os preditores, School e IDHComp, apresentam correlações positivas elevadas com LifeExp, indicando que valores maiores para **School**  e **IDHComp** estão associados a maior expectativa de vida.  
 
-Além disso, os valores de \(R^2\) mostram a proporção da variabilidade de LifeExp explicada por cada preditor individualmente. School apresenta um \(R^2\) ligeiramente menor que IDHComp, sugerindo que o índice de desenvolvimento humano é um preditor mais forte isoladamente. Esses resultados fornecem uma base inicial para avaliar o potencial de cada variável na modelagem preditiva, bem como para investigar possíveis efeitos de multicolinearidade em modelos múltiplos.
+Além disso, os valores de ($R^2$) mostram a proporção da variabilidade de LifeExp explicada por cada preditor individualmente. School apresenta um ($R^2$) ligeiramente menor que IDHComp, sugerindo que o índice de desenvolvimento humano é um preditor mais forte isoladamente. Esses resultados fornecem uma base inicial para avaliar o potencial de cada variável na modelagem preditiva, bem como para investigar possíveis efeitos de multicolinearidade em modelos múltiplos.
 
 
 
@@ -280,22 +273,17 @@ Além disso, os valores de \(R^2\) mostram a proporção da variabilidade de Lif
 $$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i} + \varepsilon_i.$$
 
     Reporte as estimativas dos coeficientes e interprete-os. Qual é função de regressão estimada?
-    Table: Relação entre os preditores e a variável resposta
+    
 
-| Modelo                         | Correlação com LifeExp | \( R^2 \) |
-|:-------------------------------:|:----------------------:|:----------:|
-| \( X_1 = \text{School} \)       | 0.72                   | 0.52       |
-| \( X_2 = \text{IDHComp} \)      | 0.84                   | 0.71       |
-| \( X_1 + X_2 \) (Múltiplo)      | —                      | 0.80       |
 
 ```{r}
-fiX1_X2 = lm(LifeExp ~ School+IDHComp , data=dados_continuos)
+
+# Modelo ajustado com X1 e X2
+fitX1_X2 = lm(LifeExp ~ School+IDHComp , data=dados_continuos)
+r2_mult <- round(summary(fitX1_X2)$r.squared,3)
 
 
-r2_mult <- summary(fiX1_X2)$r.squared
-
-
-summary(fiX1_X2)
+summary(fitX1_X2)
 summary(modeloX1)
 summary(modeloX2)
 
@@ -305,7 +293,7 @@ summary(modeloX2)
 tabela_comparacao <- data.frame(
   Modelo = c("X1 : School", "X2 :  IDHComp", "X1 + X2 (School + IDHComp)"),
   Preditores = c("School", "IDHComp", "School e IDHComp"),
-  `Correlação com LifeExp` = c(round(cor_school, 3), round(cor_idh, 3), "-"),
+  `Correlação com LifeExp` = c(cor_school, cor_idh, "-"),
   `R²` = c(round(r2_school, 3), round(r2_idh, 3), round(r2_mult, 3))
 )
 tabela_comparacao
@@ -313,11 +301,34 @@ tabela_comparacao
 kable(tabela_comparacao, align = "c", caption = "Comparação entre modelos de regressão simples e múltipla") |>
   kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover", "condensed"))
 ```
+## Comentários sobre o modelo
+
+O seguinte modelo foi ajustado : 
+    $$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i}$$
+    
+    
+- **$X_1$ School = -1.02** : Mantendo IDHComp constante, cada aumento de 1 unidade em School está associado a uma redução de aproximadamente 1.02 anos na expectativa de vida. O sinal negativo aqui é resultado da alta correlação entre School e IDHComp, ou seja, este coeficiente reflete o efeito de School ajustado pelo IDHComp. 
+
+- **$X_2$ IDHComp = 70.54** : Mantendo School constante, cada aumento de 1 unidade em IDHComp está associado a um aumento de 70.54 anos na expectativa de vida. Este coeficiente é dominante, refletindo a forte relação de IDHComp com a variável resposta.
+    
+    
+**$R^2$ e Multicolinearidade**
+
+Observa-se que o modelo de regressão ajustado apenas com o preditor $X_2$  apresenta um **$R^2$ = `r r2_idh `** muito próximo ao modelo que inclui ambos os preditores, $X_1$ e $X_2$ e possui um **$R^2$ = 0,80** Isso indica que a inclusão do $X_1$  não acrescenta ganho significativo de explicação da variabilidade da variável resposta. Esse comportamento é esperado, considerando a alta correlação entre $X_1$  e $X_2$ , o que sugere que ambos medem quase a mesma coisa e compartilham grande parte da informação explicativa.
+    
+    
+
+    
+    
     
 
 4) Para entender melhor o significado de $\beta_1$ no modelo de regressão linear múltipla, execute os passos a seguir:
 
     a) Calcule a correlação entre $X_1$ e $X_2$.
+```{r}
+cor(dados$School,dados$IDHComp)
+```
+    
     b) Faça um gráfico de dispersão de $Y$ versus $X_1$, com as cores de acordo com os níveis de $X_2$.
     c) Remova o efeito de $X_2$ da variável resposta $Y$. Para isso, faça a regressão de $Y$ em $X_2$ e guarde os resíduos $e_{y|x2}$.
     d) Remove o efeito de $X_2$ da variável preditora $X_1$. Para isso, faça a regressão de $X_1$ em $X_2$ e guarde os resíduos $e_{x1|x2}$.

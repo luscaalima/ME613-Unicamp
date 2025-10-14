@@ -31,11 +31,6 @@ library(ggplot2)
 library(ggcorrplot)
 
 cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
-# cores_padrao <- c(
-#   "#E8F4FD", "#D4ECFA", "#C0E4F8", "#ABD9E9", 
-#   "#7BC3E0", "#4DADD7", "#2C7BB6", "#1A4A7A"
-# )
-
 ```
 
 ## Introdução
@@ -197,6 +192,8 @@ summary(modeloX2)
 ```
 
 
+#ADICIONAR ALGUNS GRAFICOS DE DISPERSAO
+
 
  **Modelo 1: LifeExp ~ School**
 
@@ -277,29 +274,13 @@ $$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i} + \varepsilon_i.$$
 
 
 ```{r}
-
 # Modelo ajustado com X1 e X2
 fitX1_X2 = lm(LifeExp ~ School+IDHComp , data=dados_continuos)
-r2_mult <- round(summary(fitX1_X2)$r.squared,3)
-
-
+r2_mult <- round(summary(fitX1_X2)$r.squared,2)
 summary(fitX1_X2)
 summary(modeloX1)
 summary(modeloX2)
 
-## MONTAR A TABela 
-
-
-tabela_comparacao <- data.frame(
-  Modelo = c("X1 : School", "X2 :  IDHComp", "X1 + X2 (School + IDHComp)"),
-  Preditores = c("School", "IDHComp", "School e IDHComp"),
-  `Correlação com LifeExp` = c(cor_school, cor_idh, "-"),
-  `R²` = c(round(r2_school, 3), round(r2_idh, 3), round(r2_mult, 3))
-)
-tabela_comparacao
-
-kable(tabela_comparacao, align = "c", caption = "Comparação entre modelos de regressão simples e múltipla") |>
-  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover", "condensed"))
 ```
 ## Comentários sobre o modelo
 
@@ -315,6 +296,27 @@ O seguinte modelo foi ajustado :
 **$R^2$ e Multicolinearidade**
 
 Observa-se que o modelo de regressão ajustado apenas com o preditor $X_2$  apresenta um **$R^2$ = `r r2_idh `** muito próximo ao modelo que inclui ambos os preditores, $X_1$ e $X_2$ e possui um **$R^2$ = 0,80** Isso indica que a inclusão do $X_1$  não acrescenta ganho significativo de explicação da variabilidade da variável resposta. Esse comportamento é esperado, considerando a alta correlação entre $X_1$  e $X_2$ , o que sugere que ambos medem quase a mesma coisa e compartilham grande parte da informação explicativa.
+
+```{r echo=FALSE}
+residuos = c(r2_school,r2_idh,r2_mult)
+
+tabela_resultados1 <- data.frame(
+  Preditor = c("X1: School", "X2: IDHComp", "X1 + X2 : School + IDHComp"),
+  R2 = residuos
+)
+
+kable(tabela_resultados1, align = "c", 
+      caption = "Comparação do R² entre Modelos de Regressão",
+      col.names = c("Preditores", "R²")) |>
+  kable_styling(full_width = FALSE,
+                position = "center",
+                bootstrap_options = c("striped", "hover", "condensed")) |>
+  row_spec(1, background = "#ffffff") |>
+  row_spec(2, background = "#f0f0f0") |>
+  row_spec(3, background = "#e6f3ff") |>
+  column_spec(2, bold = TRUE)
+```
+
     
     
 

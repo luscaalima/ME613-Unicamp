@@ -29,8 +29,7 @@ library(kableExtra)
 library(GGally)
 library(ggplot2)
 library(ggcorrplot)
-
-cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
+ cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
 ```
 
 ## Introdução
@@ -109,8 +108,10 @@ ggpairs(
 ```
 
 ```{r matriz_correlacao}
-# Uma matriz de correlação é uma tabela que mostra os coeficientes de correlação entre várias variáveis.
-# Cada elemento da matriz representa a correlação entre duas variáveis. O coeficiente de correlação é uma medida estatística que expressa a força e a direção da relação linear entre duas variáveis
+# Uma matriz de correlação é uma tabela que mostra os coeficientes 
+# de correlação entre várias variáveis.
+# Cada elemento da matriz representa a correlação entre duas variáveis. 
+
 
 # Propriedades da Matriz de Correlação
 
@@ -192,7 +193,7 @@ summary(modeloX2)
 ```
 
 
-#ADICIONAR ALGUNS GRAFICOS DE DISPERSAO
+#ADICIONAR  GRAFICOS DE DISPERSAO LifeExp X School & LifeExp X IDHComp
 
 
  **Modelo 1: LifeExp ~ School**
@@ -317,11 +318,20 @@ kable(tabela_resultados1, align = "c",
   column_spec(2, bold = TRUE)
 ```
 
-    
-    
+Portando a  função de regressão estimada para o modelo múltiplo é dada por:
 
-    
-    
+$$
+\widehat{LifeExp} = 35.64 - 1.02 \cdot School + 70.54 \cdot IDHComp
+$$
+
+onde:
+
+- $\widehat{LifeExp}$: expectativa de vida estimada (anos)  
+- $School$: média de anos de escolaridade  
+- $IDHComp$: índice de desenvolvimento humano composto  
+
+Essa equação representa a relação ajustada entre a expectativa de vida e os dois preditores selecionados, considerando simultaneamente o efeito de ambos no modelo.
+
     
 
 4) Para entender melhor o significado de $\beta_1$ no modelo de regressão linear múltipla, execute os passos a seguir:
@@ -332,7 +342,35 @@ cor(dados$School,dados$IDHComp)
 ```
     
     b) Faça um gráfico de dispersão de $Y$ versus $X_1$, com as cores de acordo com os níveis de $X_2$.
+```{r}
+
+# Gráfico de dispersão de LifeExp vs School colorido pelos níveis de IDHComp
+ggplot(dados, aes(x = School, y = LifeExp, color = IDHComp)) +
+  geom_point(alpha = 0.7, size = 2) +
+  scale_color_gradientn(colors = cores_base, name = "IDHComp") +
+  labs(
+    title = "LifeExp X School colorido por IDHComp",
+    x = "School",
+    y = "LifeExp"
+  ) +
+  theme_bw(base_size = 13) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", color = "#1A4A7A"),
+    axis.title = element_text(face = "bold"),
+    legend.title = element_text(face = "bold"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.background = element_rect(fill = "white", color = "gray90")
+  )
+```
+O gráfico mostra uma clara tendência positiva entre **School** e **LifeExp**, indicando que países com maior School  tendem a ter maior LifeExp.
+
+Além disso, observa-se que as cores mais escuras (maiores valores de IDHComp) concentram-se na parte superior do gráfico, reforçando que   maior IDHComp também apresentam maior LifeExp.
+
+Essa sobreposição visual entre School e IDHComp mostra a alta correlação entre as duas variáveis (**r = `r corX1_X2`**).
+    
     c) Remova o efeito de $X_2$ da variável resposta $Y$. Para isso, faça a regressão de $Y$ em $X_2$ e guarde os resíduos $e_{y|x2}$.
+    
     d) Remove o efeito de $X_2$ da variável preditora $X_1$. Para isso, faça a regressão de $X_1$ em $X_2$ e guarde os resíduos $e_{x1|x2}$.
     e) Faça a regressão dos resíduos $e_{y|x2}$ em $e_{x1|x2}$. Compare a estimativa do coeficiente angular desta regressão com a estimativa de $\beta_1$ obtida em 3).
     f) Faça um gráfico de dispersão de $e_{y|x2}$ versus $e_{x1|x2}$, com as cores de acordo com os níveis de $X_2$. Compare com o gráfico em (a).

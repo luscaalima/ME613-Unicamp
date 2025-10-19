@@ -29,6 +29,7 @@ library(kableExtra)
 library(GGally)
 library(ggplot2)
 library(ggcorrplot)
+library(gridExtra)
  cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
 ```
 
@@ -65,11 +66,21 @@ Leia o conjunto de dados no R, como a seguir, e visualize as primeiras observaç
 dados = read_csv("LifeExpectancyModificado.csv",show_col_types = FALSE)
 # Encontramos algumas observacoes com IDHComp = 0 
 # o que nao e muito aderente com a relidade 
-# por isso optamos por filtrar e trazer somente dados com IDHComp > 0 
+# por isso optamos por filtrar e trazer somente dados com IDHComp > 0
+
+# dados_continuos =  dados %>% 
+#   select(-Developed) %>%
+#    filter(IDHComp > 0 & School > 0)
+
 dados %<>% 
+  select(-Developed)%>%
   filter(IDHComp > 0)
 
 dados_continuos <- dados[,sapply(dados, is.numeric)]
+
+# dados_continuos %>%  filter(IDHComp == 0)
+
+# dados_continuos <- dados[,sapply(dados, is.numeric)]
 ```
 
 
@@ -82,19 +93,19 @@ dados_continuos <- dados[,sapply(dados, is.numeric)]
 knitr::include_graphics("matriz_dispersao.png")
 ```
 
-
 ```{r mostrar_codigo, eval=FALSE, echo=TRUE}
 ggsave("matriz_dispersao.png", width = 12, height = 10, dpi = 300)
+
+# ggsave("imagem_dispersao.png", width = 12, height = 10, dpi = 300)
 
 # Criando o gráfico de dispersão entre todas as variáveis contínuas do conjunto de dados 
 ggpairs(
   dados_continuos,
-  #title = "Matriz de dispersão entre variáveis contínuas",
   upper = list(continuous = wrap("cor", size = 4, color = "black")),  
   lower = list(continuous = wrap("points", alpha = 0.5, size = 2, color = "#2C7BB6")),
   diag = list(continuous = wrap("densityDiag", fill = "#ABD9E9"))
 ) +
-  theme_bw(base_size = 12) +  # aumentei base_size (antes era 10)
+  theme_bw(base_size = 12) + 
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
     strip.text = element_text(size = 11, face = "bold"),
@@ -107,6 +118,7 @@ ggpairs(
   )
 ```
 
+
 ```{r matriz_correlacao}
 # Uma matriz de correlação é uma tabela que mostra os coeficientes 
 # de correlação entre várias variáveis.
@@ -115,7 +127,8 @@ ggpairs(
 
 # Propriedades da Matriz de Correlação
 
-# Simétrica: A matriz é simétrica em relação à diagonal principal. Isso porque a correlação entre a variável 
+# Simétrica: A matriz é simétrica em relação à diagonal principal. 
+# Isso porque a correlação entre a variável 
 # X e Y é a mesma entre Y e X
 
 # Cor(X,Y) = Cor(Y,X)
@@ -125,6 +138,7 @@ ggpairs(
 # COR(X,X) = 1
 
 matriz_cor <- round(cor(dados_continuos),2)
+
 ggcorrplot(
   method = "square",
   show.diag = TRUE,
@@ -138,14 +152,70 @@ ggcorrplot(
   colors = cores_base,
   outline.color = "black",
   title = "Matriz de Correlação"
-) +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", color = "#1A4A7A"),
-    axis.text.x = element_text(angle = 45, hjust = 1)
-  )
-corX1_X2 = round(cor(dados$IDHComp,dados$School),2)
+) + theme(plot.title = element_text(hjust = 0.5, face = "bold", color = "#1A4A7A"),
+    axis.text.x = element_text(angle = 45, hjust = 1))
+# Correlacao entre IDHComp e School
+corX1_X2 = round(cor(dados_continuos$IDHComp,dados_continuos$School),2)
+```
+A correlacao entre School e IDHComp e **`r corX1_X2`**  
+
+
+```{r  echo=FALSE}
+grafico1 = ggplot(dados, aes(y = LifeExp, x = School)) +
+  geom_point(aes(color = School), size = 3, alpha = 0.6) +
+  scale_color_gradientn(colors = cores_base) +
+  theme_bw()+ theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+
+grafico2 =ggplot(dados, aes(y = LifeExp, x = IDHComp)) +
+  geom_point(aes(color = IDHComp), size = 3, alpha = 0.6) +
+  scale_color_gradientn(colors = cores_base) +
+  theme_bw()+ theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+
+# grid.arrange(grafico1, grafico2, ncol = 2)
+# g <- grid.arrange(grafico1, grafico2, ncol = 2, widths = c(1, 1))
+# ggsave("graficos_combinados.png", g, width = 14, height = 6, dpi = 300)
 ```
 
+
+```{r  echo=FALSE}
+grafico3 = ggplot(dados_continuos, aes(y = LifeExp, x = School)) +
+  geom_point(aes(color = School), size = 3, alpha = 0.6) +
+  scale_color_gradientn(colors = cores_base) +
+  theme_bw()+ theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+
+grafico4 =ggplot(dados_continuos, aes(y = LifeExp, x = IDHComp)) +
+  geom_point(aes(color = IDHComp), size = 3, alpha = 0.6) +
+  scale_color_gradientn(colors = cores_base) +
+  theme_bw()+ theme(plot.title = element_text(face = "bold", hjust = 0.5))
+
+
+ # grid.arrange(grafico3, grafico4, ncol = 2)
+ # g1 <- grid.arrange(grafico3, grafico4, ncol = 2, widths = c(1, 1))
+ # ggsave("graficos_combinados22.png", g1, width = 14, height = 6, dpi = 300)
+```
+
+```{r exibir_graficos_combinadados, echo=FALSE, out.width="90%", fig.align='center'}
+# Este chunk exibe a imagem salva sem mostrar o código
+knitr::include_graphics("graficos_combinados.png")
+# knitr::include_graphics("graficos_combinados22.png")
+```
+
+A análise do gráfico **LifeExp X School** revelou registros com **School = 0**, os quais também apresentavam **IDHComp = 0**. Para assegurar a consistência dos dados, será aplicado um filtro mantendo apenas observações com **IDHComp > 0.**
+
+```{r, eval=FALSE}
+dados %<>% 
+  select(-Developed)%>%
+  filter(IDHComp > 0)
+```
+```{r exibir_graficos_combinadados2, echo=FALSE, out.width="90%", fig.align='center'}
+# Este chunk exibe a imagem salva sem mostrar o código
+# knitr::include_graphics("graficos_combinados.png")
+knitr::include_graphics("graficos_combinados22.png")
+```
+<!-- A análise do gráfico **LifeExp X School** revelou registros com **School = 0**, os quais também apresentavam **IDHComp = 0**. Para assegurar a consistência dos dados, será aplicado um filtro mantendo apenas observações com **IDHComp > 0.** -->
 
 
 **Seleção de Preditores para a Variável Resposta LifeExp**
@@ -193,7 +263,7 @@ summary(modeloX2)
 ```
 
 
-#ADICIONAR  GRAFICOS DE DISPERSAO LifeExp X School & LifeExp X IDHComp
+
 
 
  **Modelo 1: LifeExp ~ School**
@@ -370,6 +440,14 @@ Além disso, observa-se que as cores mais escuras (maiores valores de IDHComp) c
 Essa sobreposição visual entre School e IDHComp mostra a alta correlação entre as duas variáveis (**r = `r corX1_X2`**).
     
     c) Remova o efeito de $X_2$ da variável resposta $Y$. Para isso, faça a regressão de $Y$ em $X_2$ e guarde os resíduos $e_{y|x2}$.
+```{r}
+# modeloX2
+# # Resíduos de Y dados X2: e_{y|x2} 
+# # Extrair resíduos (parte de Y não explicada por X2)
+# 
+# dados$e_y_x2 <- resid(modeloX2)
+```
+<!-- Para remover o efeito de \( X_2 = IDHComp \) da variável resposta \( Y = LifeExp \), ajustou-se uma regressão simples de \( Y \) em \( X_2 \) e foram extraídos os resíduos \( e_{y|x2} \), que representam a parte da expectativa de vida não explicada pelo IDH.   -->
     
     d) Remove o efeito de $X_2$ da variável preditora $X_1$. Para isso, faça a regressão de $X_1$ em $X_2$ e guarde os resíduos $e_{x1|x2}$.
     e) Faça a regressão dos resíduos $e_{y|x2}$ em $e_{x1|x2}$. Compare a estimativa do coeficiente angular desta regressão com a estimativa de $\beta_1$ obtida em 3).

@@ -68,19 +68,12 @@ dados = read_csv("LifeExpectancyModificado.csv",show_col_types = FALSE)
 # o que nao e muito aderente com a relidade 
 # por isso optamos por filtrar e trazer somente dados com IDHComp > 0
 
-# dados_continuos =  dados %>% 
-#   select(-Developed) %>%
-#    filter(IDHComp > 0 & School > 0)
-
 dados %<>% 
   select(-Developed)%>%
   filter(IDHComp > 0)
 
 dados_continuos <- dados[,sapply(dados, is.numeric)]
 
-# dados_continuos %>%  filter(IDHComp == 0)
-
-# dados_continuos <- dados[,sapply(dados, is.numeric)]
 ```
 
 
@@ -93,7 +86,7 @@ dados_continuos <- dados[,sapply(dados, is.numeric)]
 knitr::include_graphics("matriz_dispersao.png")
 ```
 
-```{r mostrar_codigo, eval=FALSE, echo=TRUE}
+```{r mostrar_codigo, eval=FALSE, echo=FALSE}
 ggsave("matriz_dispersao.png", width = 12, height = 10, dpi = 300)
 
 # ggsave("imagem_dispersao.png", width = 12, height = 10, dpi = 300)
@@ -198,9 +191,8 @@ grafico4 =ggplot(dados_continuos, aes(y = LifeExp, x = IDHComp)) +
 ```
 
 ```{r exibir_graficos_combinadados, echo=FALSE, out.width="90%", fig.align='center'}
-# Este chunk exibe a imagem salva sem mostrar o código
+# GRAFICOS COM VALORES = 0
 knitr::include_graphics("graficos_combinados.png")
-# knitr::include_graphics("graficos_combinados22.png")
 ```
 
 A análise do gráfico **LifeExp X School** revelou registros com **School = 0**, os quais também apresentavam **IDHComp = 0**. Para assegurar a consistência dos dados, será aplicado um filtro mantendo apenas observações com **IDHComp > 0.**
@@ -211,11 +203,9 @@ dados %<>%
   filter(IDHComp > 0)
 ```
 ```{r exibir_graficos_combinadados2, echo=FALSE, out.width="90%", fig.align='center'}
-# Este chunk exibe a imagem salva sem mostrar o código
-# knitr::include_graphics("graficos_combinados.png")
+# GRAFICOS COM VALORES != 0
 knitr::include_graphics("graficos_combinados22.png")
 ```
-<!-- A análise do gráfico **LifeExp X School** revelou registros com **School = 0**, os quais também apresentavam **IDHComp = 0**. Para assegurar a consistência dos dados, será aplicado um filtro mantendo apenas observações com **IDHComp > 0.** -->
 
 
 **Seleção de Preditores para a Variável Resposta LifeExp**

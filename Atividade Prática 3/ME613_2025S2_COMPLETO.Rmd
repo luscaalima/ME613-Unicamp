@@ -1,0 +1,618 @@
+---
+title: "ME613A - Análise de Regressão"
+author: "Profa. Tatiana Benaglia"
+date: "Atividade Prática 03 - 2S2025 - 08/10/2025"
+output:
+  pdf_document: default
+  html_document: default
+  
+
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r, include=FALSE}
+#Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
+library(knitr)
+library(dplyr)
+library(kableExtra)
+library(GGally)
+library(ggplot2)
+library(ggcorrplot)
+
+
+
+cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
+cores_padrao <- c(
+  "#E8F4FD", "#D4ECFA", "#C0E4F8", "#ABD9E9", 
+  "#7BC3E0", "#4DADD7", "#2C7BB6", "#1A4A7A"
+)
+
+```
+
+## Introdução
+
+Nesta atividade vocês irão trabalhar com modelos de regressão linear múltipla.
+
+
+## Atividade
+
+A Organização Mundial de Saúde quer verificar quais fatores influenciam a expectativa de vida. Observou-se que nos últimos 15 anos houve um enorme desenvolvimento no sector da saúde, resultando na melhoria das taxas de mortalidade humana, especialmente nas nações em desenvolvimento, em comparação com os últimos 30 anos. Portanto, neste projeto estão sendo considerados dados dos anos de 2000 a 2015 para 193 países para uma análise mais aprofundada. As variáveis preditoras representam diversos grupos de fatores, ou seja, fatores econômicos e sociais além de fatores relacionados à imunização e mortalidade. 
+
+O conjunto de dados completo está no site [Kaggle > DataSets > Life Expectancy (WHO)]( https://www.kaggle.com/datasets/kumarajarshi/life-expectancy-who/data), mas nós iremos trabalhar com um subconjunto desses dados (arquivo `LifeExpectancyModificado.csv`) que compreende 2095 observações e 11 variáveis preditoras (renomeadas), descritas a seguir:
+
+* `LifeExp`: expectativa de vida (em anos)
+* `Developed`: Status do país (Yes = Desenvolvido ou No = em desenvolvimento)
+* `Mortality`: taxa de mortalidade para adultos entre 15 e 60 anos
+* `BMI`: Índice de Massa Corporal da população
+* `Alcohol`: consumo de álcool per capita (em litros)
+* `Polio`: cobertura de imunização para Polio entre crianças
+* `HIV`: Mortes por HIV/AIDS por 1000 nascidos vivos
+* `GDP`: Produto Interno Bruto per capita (em Dólares USD)
+* `IDHComp`: IDH em termos de composição do rendimento dos recursos
+* `School`: Anos de escolaridade 
+* `InfantDeaths`: número de mortes infantis por 1000 habitantes
+* `Population`: População do país (em milhões de habitantes)
+
+O interesse está em determinar quais fatores estão relacionados à expectativa de vida e você é o Estatístico que irá analisar estes dados.
+
+Leia o conjunto de dados no R, como a seguir, e visualize as primeiras observações. Verifique se as colunas estão no formato correto.
+
+```{r}
+# Lendo o conjunto de dados 
+library(readr)
+dados <- read_csv("C:/Users/cuadr/OneDrive/Desktop/Lista03/LifeExpectancyModificado.csv",
+                  show_col_types = FALSE)
+# Encontramos algumas observacoes com IDHComp = 0 
+# o que nao e muito aderente com a relidade 
+# por isso optamos por filtrar e trazer somente dados com IDHComp > 0 
+dados %<>% 
+  filter(IDHComp > 0)
+
+dados_continuos <- dados[,sapply(dados, is.numeric)]
+```
+
+
+1) Faça o gráfico de dispersão entre todas as variáveis contínuas do conjunto de dados e calcule a correlação entre elas. Comente.
+
+
+
+```{r dispersao_save, message=FALSE, warning=FALSE}
+p_matriz <- ggpairs(
+  dados_continuos,
+  upper = list(continuous = wrap("cor", size = 4, color = "black")),
+  lower = list(continuous = wrap("points", alpha = 0.5, size = 2, color = "#2C7BB6")),
+  diag  = list(continuous = wrap("densityDiag", fill = "#ABD9E9"))
+) +
+  theme_bw(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    strip.text  = element_text(size = 11, face = "bold"),
+    axis.text.x = element_text(size = 8, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 8),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  )
+
+ggsave("matriz_dispersao.png", plot = p_matriz, width = 12, height = 10, dpi = 300)
+```
+
+
+```{r exibir_questao, echo=FALSE, fig.cap="Matriz de dispersión - Inciso 1", out.width="90%", fig.align='center'}
+knitr::include_graphics("matriz_dispersao.png")
+```
+
+
+```{r matriz_correlacao}
+# Uma matriz de correlação é uma tabela que mostra os coeficientes de correlação entre várias variáveis.
+# Cada elemento da matriz representa a correlação entre duas variáveis. O coeficiente de correlação é uma medida estatística que expressa a força e a direção da relação linear entre duas variáveis
+
+# Propriedades da Matriz de Correlação
+
+# Simétrica: A matriz é simétrica em relação à diagonal principal. Isso porque a correlação entre a variável 
+# X e Y é a mesma entre Y e X
+
+# Cor(X,Y) = Cor(Y,X)
+
+# Diagonal Principal: Os elementos da diagonal principal são sempre 1,
+# pois uma variável é perfeitamente correlacionada consigo mesma. 
+# COR(X,X) = 1
+
+matriz_cor <- round(cor(dados_continuos),2)
+ggcorrplot(
+  method = "square",
+  show.diag = TRUE,
+  matriz_cor,
+  type = "upper",
+  lab = TRUE,
+  lab_size = 2.5,
+  tl.cex = 12,           
+  tl.srt = 45,          
+  digits = 2 ,
+  colors = cores_base,
+  outline.color = "black",
+  title = "Matriz de Correlação"
+) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", color = "#1A4A7A"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+corX1_X2 = round(cor(dados$IDHComp,dados$School),2)
+```
+
+
+
+**Seleção de Preditores para a Variável Resposta LifeExp**
+
+Com base na análise da matriz de dispersão e da matriz de correlação, identificamos os preditores que apresentam as maiores correlações com a variável resposta LifeExp.
+
+
+**IDHComp: Correlação de 0,89 com LifeExp**, indicando uma relação linear positiva muito forte. Isso era esperado, uma vez que o IDHComp é uma medida que sintetiza dimensões como saúde, educação e renda, diretamente relacionadas à expectativa de vida.
+
+
+**School: Correlação de 0,78 com LifeExp**, também uma relação positiva forte. A educação é um determinante social da saúde, e maior escolaridade está associada a melhores condições de vida e, consequentemente, maior longevidade.
+
+
+**Mortality: Correlação de -0,69 com LifeExp**. Essa forte relação negativa é coerente com a realidade, pois quanto menor a mortalidade, maior a expectativa de vida. A mortalidade é um indicador inverso à sobrevivência e, portanto, deve se relacionar negativamente com a expectativa de vida.
+
+
+**Relação entre os Preditores e Multicolinearidade**
+Além das correlações com a variável resposta, observamos uma correlação muito alta entre os dois principais preditores positivos, **School e IDHComp**, com valor de **`r corX1_X2`** . Essa alta correlação indica que esses dois preditores compartilham muita informação em comum.
+
+
+
+2) Defina algum critério e escolha dois preditores contínuos, denominados $X_1$ e $X_2$. Ajuste um modelo de regressão linear simples de $Y$ com cada um dos preditores $X_1$ e $X_2$, separadamente. Interprete os coeficientes.
+
+
+## Critério de escolha dos preditores
+
+O critério adotado para a escolha dos preditores foi baseado na correlação com a variável resposta (LifeExp). Assim, foram selecionadas as variáveis contínuas que apresentaram maior correlação linear com a minha variavel resposta pois essas tendem a ter maior poder explicativo no modelo.
+
+- `X1`: **School**  
+
+- `X2`: **IDHComp** 
+
+
+
+Esses preditores foram, então, utilizados para ajustar modelos de regressão linear simples separadamente, a fim de avaliar a relação individual de cada um com a minha variavel resposta LifeExp.
+
+```{r}
+
+# X1 =  School
+modeloX1 = lm(LifeExp  ~ School ,data = dados)
+summary(modeloX1)
+
+# X2 = IDHComp
+modeloX2 = lm(LifeExp  ~ IDHComp ,data = dados)
+summary(modeloX2)
+
+modeloX22 = lm(LifeExp  ~ I(IDHComp*100) ,data = dados)
+
+
+```
+
+
+
+ **Modelo 1: LifeExp ~ School**
+
+O intercepto ($\beta_0 = 39{,}95$) representa a expectativa de vida estimada quando a variável School é igual a zero. No entanto, essa situação não ocorre no conjunto de dados analisado, uma vez que os casos com School = 0 foram removidos durante o processo de limpeza, por não representarem valores plausíveis para a análise. Assim, o intercepto não possui interpretação prática direta, servindo apenas como referência para a reta de regressão.
+
+O coeficiente associado a School ($\beta_1 = 2{,}39$) indica que, para cada aumento de uma unidade na variável escolaridade, espera-se um acréscimo médio de aproximadamente 2,39 anos na expectativa de vida. Esse resultado confirma a existência de uma relação positiva e estatisticamente significativa entre escolaridade e expectativa de vida.
+
+O modelo apresentou um $R^2 = 0{,}60$, o que significa que cerca de 60% da variação observada na expectativa de vida (LifeExp) é explicada apenas pela variável School. Esse valor de $R^2$ indica um bom poder explicativo para um modelo univariado.
+
+
+ **Modelo 2: LifeExp ~ IDHComp**
+
+O intercepto ($\beta_0 = 35{,}10$) representa a expectativa de vida estimada para um valor hipotético de IDHComp igual a zero, servindo apenas como referência para a reta de regressão, uma vez que essa situação não ocorre na prática — nenhum país ou região apresenta IDH igual a zero.
+
+O coeficiente associado a IDHComp ($\beta_1 = 52{,}25$) indica que, para cada aumento unitário na variável, a expectativa de vida média tende a aumentar em aproximadamente 52,25 anos. Entretanto, como o IDHComp varia em uma escala de 0 a 1, um aumento de apenas 0,01 nessa variável (por exemplo, de 0,70 para 0,71) corresponde, na prática, a um acréscimo médio de 0,52 anos na expectativa de vida.
+
+Para tornar essa interpretação mais intuitiva, poderíamos reescalar o IDHComp multiplicando-o por 100, representando-o em pontos percentuais. Nesse caso, o coeficiente seria ajustado para aproximadamente 0,52, indicando que a cada aumento de 1 ponto percentual no IDHComp, espera-se um crescimento médio de 0,52 anos na expectativa de vida.
+```{r}
+modeloX22 = lm(LifeExp  ~ I(IDHComp*100) ,data = dados)
+coef(modeloX22)
+```
+
+
+O modelo apresentou um $R^2 = 0{,}785$, o que significa que cerca de 78,5% da variação observada na expectativa de vida (LifeExp) é explicada apenas pela variável IDHComp. Esse valor indica um elevado poder explicativo, superior ao do modelo com School, evidenciando que o IDHComp é um preditor mais abrangente, por incorporar dimensões relacionadas à educação, renda e saúde.
+
+
+
+
+```{r}
+
+cor_school <- cor(dados$LifeExp, dados$School)
+cor_idh    <- cor(dados$LifeExp, dados$IDHComp)
+correlacoes = c(cor_school,cor_idh)
+
+# Extrair os R² de cada modelo
+r2_school <- summary(modeloX1)$r.squared
+r2_idh    <- summary(modeloX2)$r.squared
+r2_School_IDHComp = c(r2_school,r2_idh)
+
+
+tabela_resultados <- data.frame(
+  Preditor = c("School", "IDHComp"),
+  Correlacao = correlacoes,
+  R2 = r2_School_IDHComp,
+  Coeficiente = c(2.399, 52.249),
+  SE = c(0.043, 0.609),
+  Valor_p = c("< 0.001", "< 0.001"),
+  IC_95 = c("[2.315, 2.483]", "[51.054, 53.446]")
+)
+
+
+tabela_latex <-
+  kable(tabela_resultados, 
+  format = "latex",
+  col.names = c("Preditor", "Correlação", "R²", "Coeficiente Beta", "Erro Padrão (Beta)", "Valor-p", "IC 95%"),
+  digits = 3,
+  caption = "Preditores de LifeExp",
+  align = c("l", "c", "c", "c", "c", "c", "c"),
+  booktabs = TRUE) %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+# Mostrar a tabela
+tabela_latex
+
+```
+
+A Tabela 1 apresenta a correlação de cada preditor contínuo selecionado com a variável resposta,(LifeExp), bem como o coeficiente de determinação (\(R^2\)) obtido ao ajustar modelos de regressão linear simples. Observa-se que ambos os preditores, School e IDHComp, apresentam correlações positivas elevadas com LifeExp, indicando que valores maiores para **School**  e **IDHComp** estão associados a maior expectativa de vida.  
+
+Além disso, os valores de \(R^2\) mostram a proporção da variabilidade de LifeExp explicada por cada preditor individualmente. School apresenta um \(R^2\) ligeiramente menor que IDHComp, sugerindo que o índice de desenvolvimento humano é um preditor mais forte isoladamente. Esses resultados fornecem uma base inicial para avaliar o potencial de cada variável na modelagem preditiva, bem como para investigar possíveis efeitos de multicolinearidade em modelos múltiplos.
+
+
+
+3) Ajuste um modelo de regressão linear múltipla usando $X_1$ e $X_2$ como preditores, ou seja,
+$$Y_i = \beta_0 + \beta_1 X_{1i}+ \beta_2 X_{2i} + \varepsilon_i.$$
+
+    Reporte as estimativas dos coeficientes e interprete-os. Qual é função de regressão estimada?
+
+```{r}
+library(broom)
+library(car)
+
+# Modelo múltiplo
+m12 <- lm(LifeExp ~ School + IDHComp, data = dados)
+
+# (Opcional) mesmo modelo com IDH em pontos percentuais
+m12_pp <- lm(LifeExp ~ School + I(IDHComp*100), data = dados)
+
+# Resumos
+glance_m12 <- glance(m12)              # R2, R2 ajust., etc.
+tidy_m12   <- tidy(m12, conf.int=TRUE) # betas, SE, p, IC
+
+glance_m12
+tidy_m12
+
+# Colinearidade (VIF)
+vif_m12 <- car::vif(m12); vif_m12
+
+# Diagnóstico rápido
+par(mfrow=c(2,2)); plot(m12); par(mfrow=c(1,1))
+```
+
+\textbf{Interpretação detalhada do modelo múltiplo:} \textit{LifeExp} $\sim$ \textit{School} + \textit{IDHComp}
+
+De acordo com os resultados, obteve-se o modelo:
+\[
+\widehat{\text{LifeExp}} = 35.64 - 1.02 \times \text{School} + 70.54 \times \text{IDHComp},
+\]
+com $R^2 = 0.80$ e $R^2_{ajust.} = 0.80$.  
+
+O intercepto ($\beta_0 = 35.64$) representa a expectativa de vida quando \textit{School} e \textit{IDHComp} são iguais a zero. Nesse caso, carece de sentido prático e serve apenas como ponto de ancoragem da reta dentro da faixa observada dos dados.
+
+O coeficiente de \textit{School} ($\beta_1 = -1.02$) apresenta sinal negativo, o que pode parecer contraintuitivo, pois nos modelos simples mostrava uma relação positiva com \textit{LifeExp}. Isso ocorre devido à alta correlação entre essa variável e o \textit{IDHComp}. Mantendo o \textit{IDHComp} fixo, \textit{School} não adiciona variação positiva à expectativa de vida; pode até aparecer com efeito negativo, pois parte de seu impacto já está incorporado no \textit{IDHComp}.
+
+O coeficiente de \textit{IDHComp} ($\beta_2 = 70.54$) é altamente significativo e mostra uma relação linear forte com \textit{LifeExp}. Como o \textit{IDHComp} varia entre 0 e 1, um aumento de 0.01 nessa variável implica um acréscimo médio de aproximadamente 0.7054 anos na expectativa de vida.
+
+
+
+4) Para entender melhor o significado de $\beta_1$ no modelo de regressão linear múltipla, execute os passos a seguir:
+
+    a) Calcule a correlação entre $X_1$ e $X_2$.
+    
+```{r}
+
+X1 <- dados$School
+X2 <- dados$IDHComp
+
+cor_x1x2 <- cor(X1, X2, use = "pairwise.complete.obs")
+cor_x1x2
+```
+A correlação calculada foi de 0,93, o que indica uma relação linear positiva muito forte entre \textit{School} e \textit{IDHComp}, ou seja, praticamente todas as informações de \textit{School} já estão incorporadas em \textit{IDHComp}.  
+
+Essa dependência linear explica os resultados do item anterior (o VIF é igual a 7.48), mostrando que existe redundância de informação entre as variáveis.  
+
+Como consequência, incluir ambas em um modelo de regressão múltipla gera \textbf{multicolinearidade}, o que afeta a estabilidade e o sinal dos coeficientes, embora o poder explicativo global continue sendo elevado.
+
+
+   
+    b) Faça um gráfico de dispersão de $Y$ versus $X_1$, com as cores de acordo com os níveis de $X_2$.
+    
+```{r}
+
+dados_plot <- dados %>%
+  drop_na(LifeExp, School, IDHComp) %>%
+  mutate(
+    IDH_nivel = ggplot2::cut_number(IDHComp, 4, 
+                    labels = c("Q1 (baixo)", "Q2", "Q3", "Q4 (alto)"))
+  )
+
+ggplot(dados_plot, aes(x = School, y = LifeExp, color = IDH_nivel)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.9) +
+  labs(
+    title = "LifeExp vs School por níveis de IDH (quartis)",
+    x = "School (anos)",
+    y = "LifeExp (anos)",
+    color = "IDHComp"
+  ) +
+  theme_bw()
+```
+O gráfico mostra uma associação positiva entre \textit{LifeExp} e \textit{School}; no entanto, ao estratificar por níveis de \textit{IDHComp}, observa-se que os países com maior IDH também apresentam maior longevidade. Isso gera um deslocamento vertical da relação de acordo com o nível de desenvolvimento humano: para um mesmo grau de escolaridade, os países com IDH mais alto alcançam expectativas de vida mais elevadas.
+
+A forte colinearidade entre \textit{School} e \textit{IDHComp} ($r \approx 0.93$) implica que o que é observado marginalmente para \textit{School} mistura seu efeito com o do \textit{IDHComp}. Por isso, quando o \textit{IDHComp} é controlado no modelo múltiplo, o efeito parcial de \textit{School} se reduz e até inverte seu sinal, enquanto o \textit{IDHComp} mantém um efeito positivo e dominante sobre \textit{LifeExp}. Isso evidencia que grande parte da relação entre educação e longevidade é mediada pelo desenvolvimento humano global, e não apenas pelos anos de escolaridade.
+
+    
+    
+    c) Remova o efeito de $X_2$ da variável resposta $Y$. Para isso, faça a regressão de $Y$ em $X_2$ e guarde os resíduos $e_{y|x2}$.
+    
+```{r}
+# Regressão simples de Y (LifeExp) em X2 (IDHComp)
+modelo_y_x2 <- lm(LifeExp ~ IDHComp, data = dados)
+
+# Resumo do modelo
+summary(modelo_y_x2)
+
+# Guardar os resíduos e_y|x2
+e_yx2 <- resid(modelo_y_x2)
+
+# Opcional: adicionar os resíduos ao dataframe
+dados$e_yx2 <- e_yx2
+
+# Verificar primeiras observações
+head(dados$e_yx2)
+```
+Fazendo uma análise, observa-se que o intercepto $\beta_0 = 35.10$ e o coeficiente angular $\beta_1 = 52.25$, o que significa que, para cada aumento de uma unidade em \textit{IDHComp}, a expectativa de vida média aumenta aproximadamente 52,25 anos.  
+
+Em ambos os coeficientes, o valor-$p$ é menor que $2 \times 10^{-16}$, indicando uma relação linear positiva e altamente significativa entre \textit{IDHComp} e \textit{LifeExp}.  
+
+Além disso, o $R^2 = 0.786$ revela que cerca de 78,6\% da variabilidade da expectativa de vida entre os países é explicada unicamente pelo \textit{IDHComp}, o que demonstra que ele é um excelente preditor individual, pois engloba diversas dimensões relacionadas ao tempo de vida.  
+
+Os 21,4\% restantes da variabilidade podem ser atribuídos a fatores não incluídos no modelo, como aspectos culturais, políticas públicas, desigualdade social ou variações amostrais.
+
+    d) Remove o efeito de $X_2$ da variável preditora $X_1$. Para isso, faça a regressão de $X_1$ em $X_2$ e guarde os resíduos $e_{x1|x2}$.
+    
+```{r}
+# Regressão de X1 (School) em X2 (IDHComp)
+modelo_x1_x2 <- lm(School ~ IDHComp, data = dados)
+
+# Resumo do modelo
+summary(modelo_x1_x2)
+
+# Guardar os resíduos e_{x1|x2}
+e_x1x2 <- resid(modelo_x1_x2)
+
+# Adicionar ao dataframe
+dados$e_x1x2 <- e_x1x2
+
+# Verificar primeiras observações
+head(dados$e_x1x2)
+```
+Fazendo uma análise, observa-se que o intercepto $\beta_0 = 0.5237$ e o coeficiente angular $\beta_1 = 17.85$, o que significa que, para cada aumento de uma unidade em \textit{IDHComp}, espera-se um incremento médio de 17,85 anos de escolaridade.  
+
+O coeficiente de determinação $R^2 = 0.866$ mostra que o modelo explica 86,6\% da variabilidade total nos anos médios de escolaridade entre os países. Isso sugere que o \textit{IDHComp}, por si só, é capaz de capturar quase todo o comportamento da variável \textit{School}, o que faz sentido, pois o IDH inclui componentes educacionais em seu cálculo.  
+
+Os resíduos representam a parcela da escolaridade que não pode ser explicada pelo \textit{IDHComp}.
+
+    
+    e) Faça a regressão dos resíduos $e_{y|x2}$ em $e_{x1|x2}$. Compare a estimativa do coeficiente angular desta regressão com a estimativa de $\beta_1$ obtida em 3).
+    
+```{r}
+# Regressão dos resíduos de Y~X2 em X1~X2
+modelo_residuos <- lm(e_yx2 ~ e_x1x2, data = dados)
+
+# Resumo do modelo
+summary(modelo_residuos)
+```
+Ao regredir $e_{y|x2}$ sobre $e_{x1|x2}$, obteve-se uma inclinação de $-1.025$ (EP = 0.084, IC95\% $\approx [-1.189, -0.861]$, $p < 0.001$) e um intercepto nulo (aproximadamente 0).  
+
+Esse valor coincide com o $\beta_1$ do modelo múltiplo (\textit{LifeExp} $\sim$ \textit{School} + \textit{IDHComp}, $\beta_1 \approx -1.02$), demonstrando que a regressão dos resíduos recupera o efeito parcial de \textit{School} sobre \textit{LifeExp}, controlando o \textit{IDHComp}.  
+
+O $R^2 = 0.069$ indica que, após remover o efeito do \textit{IDH}, a parte residual da escolaridade explica pouca variação adicional na expectativa de vida, o que é coerente com a forte colinearidade entre \textit{School} e \textit{IDHComp}.
+
+
+    f) Faça um gráfico de dispersão de $e_{y|x2}$ versus $e_{x1|x2}$, com as cores de acordo com os níveis de $X_2$. Compare com o gráfico em (a).
+
+```{r}
+ggplot(dados, aes(x = e_x1x2, y = e_yx2, color = IDHComp)) +
+  geom_point(alpha = 0.7, size = 2) +
+  geom_smooth(method = "lm", se = FALSE, color = "black", linetype = "dashed") +
+  scale_color_viridis_c(option = "plasma", direction = 1) +
+  labs(
+    title = expression("e"[y~"|"~x2]~"vs"~"e"[x1~"|"~x2]~"por níveis de IDHComp"),
+    subtitle = "Gráfico de resíduos (LifeExp ~ School, controlando IDHComp)",
+    x = expression(e[x1~"|"~x2]~"(School - efeito de IDHComp)"),
+    y = expression(e[y~"|"~x2]~"(LifeExp - efeito de IDHComp)"),
+    color = "IDHComp"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 11, hjust = 0.5),
+    legend.position = "right"
+  )
+```
+O gráfico de dispersão entre os resíduos $e_{y|x2}$ e $e_{x1|x2}$ mostra uma nuvem de pontos centrada em torno do eixo horizontal, com uma inclinação ligeiramente negativa.  
+
+Esse padrão coincide com o coeficiente de $-1.025$ obtido na regressão dos resíduos, que representa o efeito parcial de \textit{School} sobre \textit{LifeExp}, controlando o \textit{IDHComp}.  
+
+Diferentemente do gráfico do item (a) (\textit{LifeExp} vs \textit{School}), onde havia uma clara tendência positiva influenciada pelo nível de desenvolvimento humano, neste caso as cores se misturam, indicando que o efeito do \textit{IDHComp} foi corretamente removido.  
+
+Assim, a relação que antes parecia positiva torna-se fraca e negativa ao isolar o componente educacional independente do desenvolvimento humano, confirmando que a associação inicial entre educação e expectativa de vida estava fortemente mediada pelo \textit{IDHComp}.
+
+
+
+5) Obtenha a tabela ANOVA para o modelo de RLM obtido em 3. Use a função `anova()` do `R`.
+
+```{r}
+anova(m12)
+```
+De acordo com a tabela ANOVA, observa-se que \textit{School} e \textit{IDHComp} apresentam valores-$p$ menores que $2.2 \times 10^{-16}$, o que indica que sua contribuição estatística é altamente significativa para explicar a expectativa de vida.  
+
+O valor de $F$ associado a \textit{School} é muito maior do que o de \textit{IDHComp}, o que implica que \textit{School} explica uma porção maior da variação total de \textit{LifeExp}, considerando a ordem de entrada das variáveis na tabela ANOVA.  
+
+Isso não contradiz o resultado anterior, no qual o efeito parcial de \textit{School} foi negativo, pois essa diferença decorre do \textbf{ordem sequencial} em que as variáveis são introduzidas no modelo.
+
+
+6) A partir da tabela ANOVA acima, apresente um teste de hipótese para verificar se os coeficientes $\beta_1$ e $\beta_2$ são nulos. Escreva as hipóteses, estatística do teste (fórmula, valor observado e distribuição sob $H_0$), p-valor e conclusão.
+
+### 6) Teste de hipótese global para os coeficientes \(\beta_1\) e \(\beta_2\)
+
+Para verificar se os preditores \(X_1 = \text{School}\) e \(X_2 = \text{IDHComp}\) têm efeito significativo sobre a variável resposta \(Y = \text{LifeExp}\), consideramos o seguinte teste de hipótese global:
+
+\[
+\begin{cases}
+H_0: \beta_1 = \beta_2 = 0 & \text{(nenhum preditor explica LifeExp)} \\
+H_1: \text{pelo menos um } \beta_j \neq 0 & \text{(pelo menos um preditor tem efeito significativo sobre LifeExp)}
+\end{cases}
+\]
+
+A estatística de teste utilizada é baseada na decomposição da variância (ANOVA):
+
+\[
+F = \frac{(SQ_{Regressão}/p)}{(SQ_{Resíduos}/(n - p - 1))},
+\]
+
+onde:
+- \( SQ_{Regressão} = 157{,}458 \) representa a soma dos quadrados explicados pelos preditores;
+- \( SQ_{Resíduos} = 39{,}260 \) é a soma dos quadrados dos resíduos;
+- \( p = 2 \) é o número de preditores;
+- \( n = 2009 \) é o número total de observações.
+
+Substituindo os valores, obtemos:
+
+\[
+F_{obs} = \frac{(157{,}458 / 2)}{(39{,}260 / 2006)} \approx 4023.
+\]
+
+Sob a hipótese nula \(H_0\), a estatística segue uma distribuição \(F_{(2, 2006)}\).
+
+O valor-p associado ao teste é extremamente pequeno (\(p\text{-valor} < 2 \times 10^{-16}\)), indicando forte evidência contra \(H_0\).
+
+\[
+\Rightarrow \text{Como } p\text{-valor} < 0{,}001, \text{ rejeitamos } H_0.
+\]
+
+\noindent Portanto, concluímos que **pelo menos um dos coeficientes \(\beta_1\) ou \(\beta_2\) é diferente de zero**, ou seja, o modelo de regressão múltipla com *School* e *IDHComp* é estatisticamente significativo e explica uma proporção substancial da variação da expectativa de vida.
+
+\[
+\boxed{\text{Conclusão: o modelo é globalmente significativo (} F_{obs} = 4023, \, p < 0.001 \text{)}.}
+\]
+
+
+7) Faça um teste t para cada um dos coeficientes $\beta_1$ e $\beta_2$. Escreva as hipóteses, estatística do teste (fórmula, valor observado e distribuição sob $H_0$), p-valor e conclusão.
+
+### 7) Testes t individuais para \(\beta_1\) (School) e \(\beta_2\) (IDHComp)
+
+Considere o modelo múltiplo ajustado no item 3:
+\[
+\widehat{\text{LifeExp}} \;=\; \beta_0 \;+\; \beta_1\,\text{School} \;+\; \beta_2\,\text{IDHComp}.
+\]
+Com \(n=2009\) observações e \(p=2\) preditores, os testes t usam \(df = n-p-1 = 2006\).
+
+A estatística de teste para cada coeficiente é
+\[
+t_j \;=\; \frac{\hat\beta_j - 0}{\text{EP}(\hat\beta_j)}, 
+\qquad \text{sob } H_0 \text{ temos } t_j \sim t_{(2006)}.
+\]
+
+#### (a) Teste para \(\beta_1\) (School)
+\[
+\begin{cases}
+H_0:\; \beta_1 = 0,\\
+H_1:\; \beta_1 \neq 0.
+\end{cases}
+\]
+Estimativa e erro-padrão: \(\hat\beta_1 = -1.024755\), \(\text{EP}(\hat\beta_1)=0.083862\).
+\[
+t_{\text{obs}} \;=\; \frac{-1.024755}{0.083862} \;=\; -12.21953.
+\]
+Distribuição sob \(H_0\): \(t_{(2006)}\).
+Valor-\(p\): \(p = 3.579311\times 10^{-33} \;(< 0.001)\).
+
+\[
+\Rightarrow \;\textbf{Conclusão:} \text{ rejeitamos } H_0.
+\]
+Há evidência estatística de que \(\beta_1 \neq 0\); o efeito parcial estimado de School (controlando IDHComp) é negativo e significativo.
+
+\vspace{6pt}
+
+#### (b) Teste para \(\beta_2\) (IDHComp)
+\[
+\begin{cases}
+H_0:\; \beta_2 = 0,\\
+H_1:\; \beta_2 \neq 0.
+\end{cases}
+\]
+Estimativa e erro-padrão: \(\hat\beta_2 = 70.543231\), \(\text{EP}(\hat\beta_2)=1.608476\).
+\[
+t_{\text{obs}} \;=\; \frac{70.543231}{1.608476} \;=\; 43.85718.
+\]
+Distribuição sob \(H_0\): \(t_{(2006)}\).
+Valor-\(p\): \(p = 3.377178\times 10^{-295} \;(< 0.001)\).
+
+\[
+\Rightarrow \;\textbf{Conclusão:} \text{ rejeitamos } H_0.
+\]
+Há evidência estatística de que \(\beta_2 \neq 0\); o efeito de IDHComp sobre LifeExp é positivo e altamente significativo.
+
+\[
+\boxed{\text{Ambos os coeficientes são diferentes de zero ao nível usual (}\alpha=0.05\text{).}}
+\]
+
+\vspace{8pt}
+
+\noindent\textbf{Conclusão geral:}
+
+Os resultados dos testes \(t\) indicam que tanto \(\beta_1\) quanto \(\beta_2\) são estatisticamente diferentes de zero ao nível de significância de 5\%.  
+O coeficiente associado à variável \(\text{School}\) (\(\hat\beta_1 = -1.02\)) apresenta um efeito parcial \textbf{negativo e significativo}, o que significa que, mantido o nível de desenvolvimento humano constante, variações residuais na escolaridade estão associadas a pequenas reduções na expectativa de vida.  
+Esse comportamento, embora contraintuitivo, decorre da \textbf{alta colinearidade} entre \(\text{School}\) e \(\text{IDHComp}\), de modo que grande parte do efeito positivo da educação já está incorporado na variável de desenvolvimento humano.
+
+Por outro lado, o coeficiente \(\hat\beta_2 = 70.54\) revela um \textbf{efeito positivo, forte e altamente significativo} do \(\text{IDHComp}\) sobre a expectativa de vida, confirmando que o desenvolvimento humano é o principal determinante do aumento da longevidade entre os países analisados.
+
+Em conjunto, os resultados dos testes \(t\) reforçam que o modelo múltiplo é estatisticamente sólido, com ambos os preditores contribuindo de forma significativa, mas com magnitudes e direções distintas — o \(\text{IDHComp}\) exercendo o papel dominante e a \(\text{School}\) apresentando um efeito parcial residual após o controle do IDH.
+
+
+
+8) Calcule os intervalos de 95% de confiança para cada um dos $\beta_1$ e $\beta_2$. Como esses intervalos se relacionam com a conclusão dos testes t feitos no item anterior?
+
+```{r}
+confint(m12, level = 0.95)
+
+```
+Os intervalos de confiança de 95\% para os coeficientes $\beta_1$ (\textit{School}) e $\beta_2$ (\textit{IDHComp}) não incluem o valor nulo, o que nos leva à mesma conclusão que os testes $t$ realizados no item anterior: ambos os coeficientes são significativamente diferentes de zero ao nível de significância de 5\%.  
+
+Neste caso, o IC de \textit{School} está completamente abaixo de 0 [$-1.189,\,-0.861$], o que confirma um efeito parcial negativo ao controlar por \textit{IDHComp}. Por outro lado, o IC de \textit{IDHComp} está completamente acima de 0 [$67.389,\,73.697$], o que indica um efeito positivo e forte sobre \textit{LifeExp}.
+
+
+
+
+
+
+
+
+
+

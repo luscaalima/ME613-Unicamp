@@ -1,0 +1,82 @@
+---
+title: "ME613A - Análise de Regressão"
+author: "Profa. Tatiana Benaglia"
+alunos: "Lucas Lima 263267,Daniela Cielo 298825"
+date: "Atividade Prática 04 - 2S2025 - 22/10/2025"
+output:
+  pdf_document: default
+header-includes: \usepackage{booktabs}
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+```{r, include=FALSE}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+```
+
+## Introdução
+
+Nesta atividade vocês irão trabalhar os seguintes conceitos:
+
+* regressão linear múltipla;
+* tabela ANOVA;
+* soma extra de quadrados para testar hipóteses sobre os coeficientes;
+* coeficientes de determinação múltiplo e parcial.
+
+
+## Atividade 1: Gordura Corporal
+
+Considere os dados sobre gordura corporal em anexo. Esses são os mesmos dados que foram utilizados nos slides apresentados em aula. O interesse está em explicar a relação entre a taxa de gordura corporal ($Y$) e três medidas corporais:  
+
+* $X1$: espessura da dobra cutânea do tríceps;
+* $X2$: circunferência da coxa; e
+* $X3$: circunferência do meio do braço.
+
+1) Faça uma matriz com os gráficos de dispersão entre os pares de variáveis e também as correlações. Qual a correlação das preditoras com a variável resposta? As variáveis preditoras são correlacionadas entre si?
+
+2) Ajuste um modelo de regressão linear múltipla usando $X_1$, $X_2$ e $X_3$ como preditores, ou seja,
+$$Y_i = \beta_0 + \beta_1 X_{1i} + \beta_2 X_{2i} + \beta_3 X_{3i} + \varepsilon_i.$$
+
+    Reporte as estimativas dos coeficientes e interprete-os. Qual é função de regressão estimada?
+
+
+3) Obtenha a tabela ANOVA para o modelo ajustado usando os 3 preditores. Explique as somas de quadrados apresentados nesta tabela ANOVA.
+
+4) Preencha a tabela ANOVA a seguir:
+    
+    \begin{table}[h]
+    \centering
+    \begin{tabular}{lrrrr} \toprule
+    Fonte       & gl & SQ & QM  & F  \\ \midrule
+    Regressão   &    &    &     &   \\
+    Erro        &    &    &     &   \\ \midrule
+    Total       &    &    &     &  \\ \bottomrule
+    \end{tabular}
+    \end{table}
+
+    A partir desta tabela ANOVA, faça um teste F para verificar se os coeficientes $\beta_1$, $\beta_2$ e $\beta_3$ são todos não nulos. Quais são as hipóteses sendo testadas, a estatística do teste e conclusão.
+
+5) Usando a função `summary()`, obtenha a tabela dos coeficientes, juntamente com os testes t para cada coeficiente. Se você tivesse que escolher um preditor para excluir do modelo, qual seria? Justifique.
+
+6) Construa um teste para verificar se $\beta_2 = 0$ usando as somas extras de quadrados, ou seja, verifique se o efeito da variável $X_2$ é significativo para explicar $Y$, considerando que $X_1$ e $X_3$ estão no modelo. 
+
+7) O teste F do item anterior é equivalente a qual teste t do item 5)? Qual a relação entre as estatísticas do teste? Interprete esse resultado.
+
+8) Obtenha a tabela ANOVA que decompõe a $SQReg$ em $SQ(X_2)$, $SQ(X_1 | X_2)$ e $SQ(X_3 | X_1, X_2)$. Como executar isso no `R`?
+
+9) Teste se ambos os preditores $X_1$ e $X_3$ podem ser excluídos do modelo, dado que $X_2$ é mantido no modelo. Escreva as hipóteses, estatística do teste e conclusão para um nível de significância $\alpha = 0.05$.
+
+10) Encontre o coeficient de determinação $R^2$ da regressão linear simples quando apenas $X_2$ está no modelo. Interprete.
+
+11) Encontre o coeficiente de determinação múltiplo e ajustado, $R^2$ e $R^2_{adj}$, respectivamente, quando os três preditores estão no modelo. Interprete-os.
+
+12) Calcule o coeficiente de determinação de $Y$ com $X_1$ e $X_3$, dado que $X_2$ está no modelo. Interprete.
+
+13) Depois de toda essa análise, ajuste o modelo que você considera mais apropriado para explicar a taxa de gordura corporal. 
+
+14) Faça a análise de resíduos com para este modelo que você ajustou no item 13.

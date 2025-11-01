@@ -279,13 +279,155 @@ coeficientes \(\beta_j\) é diferente de zero.
 
 5) Usando a função `summary()`, obtenha a tabela dos coeficientes, juntamente com os testes t para cada coeficiente. Se você tivesse que escolher um preditor para excluir do modelo, qual seria? Justifique.
 
+```{r}
+summary(modelo)$coefficients
+```
+Cada teste \( t \) avalia a hipótese:
+$$
+H_0: \beta_j = 0 \quad \text{vs} \quad H_1: \beta_j \neq 0,
+$$
+condicionalmente aos demais preditores do modelo.
+
+Esses testes avaliam o **efeito parcial** de cada variável sobre \( Y \).
+
+Pela tabela de coeficientes, observa-se que todos os preditores (\( X_1, X_2, X_3 \)) apresentam
+p-valores acima de 0,05, indicando que **nenhum deles é individualmente significativo**
+quando os outros estão no modelo. No entanto, o teste \( F \) global mostrou que o modelo
+como um todo é significativo, o que sugere **presença de multicolinearidade**.
+
+Sabemos que \( X_1 \) e \( X_2 \) possuem **alta correlação** (\( r = 0{,}92 \)), o que infla
+os erros-padrão e reduz a significância dos coeficientes individuais.
+
+Se fosse necessário excluir um preditor, o mais apropriado seria **remover \( X_2 \)**,
+pois :
+
+- Apresenta o **maior p-valor** (\( p = 0{,}2848944 \)), sendo o menos significativo
+
+- Possui uma  **alta correlação com \( X_1 \)**, fornecendo informação redundante
+
+- Essa exclusão tende a **reduzir a multicolinearidade** e tornar o modelo mais estável.
+
+Portanto, considerando tanto os testes \( t \) quanto a correlação entre preditores,
+o preditor \( X_2 \) seria o mais adequado para ser removido do modelo.
+
+
+
+
 6) Construa um teste para verificar se $\beta_2 = 0$ usando as somas extras de quadrados, ou seja, verifique se o efeito da variável $X_2$ é significativo para explicar $Y$, considerando que $X_1$ e $X_3$ estão no modelo. 
+
+```{r}
+# Modelos reduzido e completo
+mod_red  <- lm(Y ~ X1 + X3, data = dados)        # semX2
+mod_full <- lm(Y ~ X1 + X2 + X3, data = dados)   # com X2
+
+# Teste por soma extra de quadrados para X2 | X1, X3
+anova(mod_red, mod_full)
+# Entrega: Df, RSS (SSE), Sum of Sq (SSE_red - SSE_full), F y p-value
+
+# (Equivalente al t de X2 en summary(mod_full): t^2 = F con df1=1)
+summary(mod_full)$coefficients["X2", ]
+
+```
+
+O modelo 2, que é o modelo completo, vs o modelo reduzido, que é o modelo 1. A hipótese do teste parcial, que é o efeito de $X_2$ dado $X_1$ e $X_3$, é $H_0: \beta_2 = 0$ vs $H_1: \beta_2 \neq 0$. 
+O estatístico de prova $F$ por somas extras de quadrados é:
+\[
+F = \frac{(SSE_r - SSE_f)/(p_f - p_r)}{MSE_f} = \frac{SSE_r - SSE_f}{MSE_f}
+\]
+\[
+F \sim F(1, n - p_f)
+\]
+Onde $p_f = 4$ (o intercepto + 3 betas) e $p_r = 3$. Dos cálculos da tabela pode-se ver que o modelo completo tem $SSE_f = 98{,}4049$ e $MSE_f = 6{,}1503$. 
+No modelo reduzido, a soma extra de $X_2$ dado $X_1$ e $X_3$ é a diferença $SSE_r - SSE_f = 7{,}5301$. 
+Então o $F_{\text{parcial}}(X_2 \mid X_1, X_3) = 7{,}5301 / 6{,}1502 = 1{,}224$. 
+Com um p-valor de $0{,}285$, como $\alpha = 0{,}05$, a decisão é que não se rejeita $H_0$. Por conseguinte, a conclusão é que o efeito de $X_2$ não é significativo para explicar $Y$, considerando que $X_1$ e $X_2$ já estão no modelo.
+
+
 
 7) O teste F do item anterior é equivalente a qual teste t do item 5)? Qual a relação entre as estatísticas do teste? Interprete esse resultado.
 
+
+
+
+O teste F parcial realizado no item anterior para testar
+
+$$
+H_0: \beta_2 = 0 \quad \text{versus} \quad H_1: \beta_2 \neq 0
+$$
+ é **equivalente ao teste t para o coeficiente de $X_2$** apresentado na tabela do `summary(modelo)` do item 5.
+
+```{r}
+summary(modelo)
+```
+### Relação entre as Estatísticas do Teste
+
+- No teste t do item 5, para $X_2$, obtivemos:
+
+- **t value = -1.1064411**
+- **Pr( > |t| ) = 0.2848944**
+
+### No teste F parcial do item anterior, obtivemos:
+
+-**F = 1.224**
+
+-**p-value = 0.285**
+
+A relação matemática entre as estatísticas é : 
+
+**F = $t^2$**
+
+Calculando
+
+**(1.1064411) * (1.1064411) =  1.224 = F**
+
+<!-- $(−1.1064411)^2$ = 1.224 = F  -->
+
+Além disso, os p-valores são essencialmente idênticos (0.2849 vs. 0.285), considerando arredondamentos.
+
 8) Obtenha a tabela ANOVA que decompõe a $SQReg$ em $SQ(X_2)$, $SQ(X_1 | X_2)$ e $SQ(X_3 | X_1, X_2)$. Como executar isso no `R`?
 
+```{r}
+# Modelo com outra ordem: X2,X1,X3
+mod_ord <- lm(Y ~ X2 + X1 + X3, data = dados)
+
+# ANOVA Tipo I (secuencial) en ese orden
+anova(mod_ord)
+
+```
+Neste item fizemos a ANOVA sequencial (Tipo I) com a ordem $X_2 \rightarrow X_1 \rightarrow X_3$, decompondo $SQ_{\text{Reg}}$ em $SQ(X_2)=381{,}966$, $SQ(X_1 \mid X_2)=3{,}473$ e $SQ(X_3 \mid X_1, X_2)=11{,}546$ (somam $396{,}985$, que coincide com $SQ_{\text{Reg}}$); o resíduo é $SQ_E = 98{,}405$ e $QM_E = 6{,}150$ ($n=20$). Ao contrastar cada passo, $X_2$ é altamente significativo ($F \approx 62{,}11$, $p \ll 0{,}001$), enquanto $X_1 \mid X_2$ ($F \approx 0{,}56$, $p \approx 0{,}463$) e $X_3 \mid X_1, X_2$ ($F \approx 1{,}88$, $p \approx 0{,}190$) não resultam significativos. A leitura chave é que, pela colinearidade alta entre $X_1$ e $X_2$, o preditor que entra primeiro (aqui $X_2$) “leva” quase toda a variação explicada; por isso esta ANOVA depende da ordem e, se quisermos avaliar aportes parciais independentes da ordem, devemos olhar também os $t$-tests (Tipo II/III) além desta partição.
+
+
+
+
 9) Teste se ambos os preditores $X_1$ e $X_3$ podem ser excluídos do modelo, dado que $X_2$ é mantido no modelo. Escreva as hipóteses, estatística do teste e conclusão para um nível de significância $\alpha = 0.05$.
+
+```{r}
+# Modelo reduzido (apenas X2)
+modelo_reduzido <- lm(Y ~ X2, data = dados)
+
+# Modelo completo (X2, X1 e X3)
+modelo_completo <- lm(Y ~ X2 + X1 + X3, data = dados)
+
+# Teste F parcial
+teste_F <- anova(modelo_reduzido, modelo_completo)
+print(teste_F)
+```
+
+Teste de Exclusão Conjunta de $X_1$ e $X_3$ dado $X_2$
+
+$$
+H_0: \beta_1 = \beta_3 =  0 \quad \text{versus} \quad H_1: \beta_1 \neq 0 \quad  \text{ou}  \quad    \beta_2 \neq 0  
+$$
+### Execução do Teste no R 
+
+```{r}
+# Modelo reduzido (apenas X2)
+modelo_reduzido <- lm(Y ~ X2, data = dados)
+
+# Modelo completo (X2 + X1 + X3)
+modelo_completo <- lm(Y ~ X2 + X1 + X3, data = dados)
+```
+
 
 10) Encontre o coeficient de determinação $R^2$ da regressão linear simples quando apenas $X_2$ está no modelo. Interprete.
 

@@ -1,0 +1,72 @@
+---
+title: "Trabalho 1 - ME613 : Análise de Regressão"
+author: |
+  **Lucas Lima**  
+  RA: 263267
+date: "2º semestre de 2025"
+output:
+  pdf_document:
+    # latex_engine: xelatex
+    toc: true       # gera sumário
+    toc_depth: 2
+fontsize: 12pt
+geometry: margin=2.5cm
+lang: "pt-BR"
+---
+```{r, include=FALSE}
+# Importando bibliotecas
+library(ggplot2)
+library(readr)
+library(tidyr)
+library(tidyverse)
+library(stringr)
+library(magrittr)
+library(lubridate)
+library(knitr)
+library(dplyr)
+library(kableExtra)
+library(GGally)
+library(ggplot2)
+library(ggcorrplot)
+library(gridExtra)
+```
+
+# Introdução e Motivação
+
+A expectativa de vida é um indicador fundamental para avaliar o nível de desenvolvimento de um país, refletindo aspectos econômicos, sociais e de saúde pública. Diversos estudos ao longo das últimas décadas analisaram fatores que influenciam esse indicador, considerando principalmente variáveis demográficas, composição de renda e taxas de mortalidade. No entanto, lacunas importantes ainda permanecem, especialmente no que diz respeito ao papel de fatores de imunização e ao uso de indicadores mais amplos de desenvolvimento humano.
+
+Além disso, grande parte das pesquisas anteriores utilizou modelos de regressão baseados em dados de apenas um ano, o que limita a compreensão de tendências temporais e padrões de variação entre países. Esse cenário motiva a realização de uma análise mais abrangente, aproveitando dados longitudinais e modelos estatísticos que permitam capturar heterogeneidade entre diferentes regiões do mundo.
+
+O conjunto de dados utilizado neste trabalho foi construído a partir de informações disponibilizadas pelo *Global Health Observatory* (GHO), da Organização Mundial da Saúde (OMS), e dados econômicos obtidos da Organização das Nações Unidas (ONU). O dataset final reúne indicadores de saúde e socioeconômicos de 193 países ao longo do período de 2000 a 2015, permitindo investigar a evolução da expectativa de vida e os fatores que mais contribuem para sua variação.
+
+Entre as variáveis de interesse destacam-se:
+
+- **Fatores de imunização:** Hepatite B, Poliomielite e Difteria;  
+- **Fatores de mortalidade:** mortalidade infantil, mortalidade adulta, entre outros;  
+- **Fatores econômicos:** PIB per capita, índices de desenvolvimento, gastos públicos;  
+- **Fatores sociais:** escolaridade média, infraestrutura e condições de vida;  
+
+A escolha dessas categorias busca fornecer uma visão ampla sobre a diversidade de elementos que impactam diretamente a saúde da população. Durante o processamento dos dados, foram identificados valores ausentes principalmente nas variáveis relacionadas ao PIB, população e taxas de imunização. A maior parte desses casos correspondia a países pequenos ou com baixa disponibilidade de dados, como Tonga, Cabo Verde e Vanuatu. Por esse motivo, optou-se por excluir essas observações, resultando em um dataset final com 22 variáveis e 2.938 registros.
+
+Dessa forma, este estudo tem como principal motivação identificar e quantificar quais fatores — entre imunização, mortalidade, condições econômicas e indicadores sociais — exercem maior influência sobre a expectativa de vida. Com isso, pretende-se fornecer subsídios que auxiliarão gestores públicos e instituições de saúde na priorização de políticas públicas e intervenções capazes de melhorar a qualidade de vida da população.
+
+```{r}
+# Lendo o conjunto de dados 
+dados = read_csv("Life_Expectancy Data.csv",show_col_types = FALSE)
+```
+
+```{r}
+
+# Supondo que seu dataset se chame 'dados'
+# Selecionando colunas específicas + primeiras 5 linhas
+dados_selecionados <- dados %>%
+  select(`Life expectancy`, Year,Alcohol,Schooling,`Adult Mortality`,Population) %>%  # substitua pelos nomes reais
+  head(5)
+
+kable(dados_selecionados, 
+      caption = "Primeiras 5 observações - Colunas selecionadas",
+      align = c("l", "c", "r", "c"))  # alinhamento das colunas
+```
+
+
+

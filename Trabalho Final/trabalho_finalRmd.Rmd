@@ -50,17 +50,14 @@ A escolha dessas categorias busca fornecer uma visão ampla sobre a diversidade 
 
 Dessa forma, este estudo tem como principal motivação identificar e quantificar quais fatores — entre imunização, mortalidade, condições econômicas e indicadores sociais — exercem maior influência sobre a expectativa de vida. Com isso, pretende-se fornecer subsídios que auxiliarão gestores públicos e instituições de saúde na priorização de políticas públicas e intervenções capazes de melhorar a qualidade de vida da população.
 
-```{r}
+```{r echo = FALSE}
 # Lendo o conjunto de dados 
 dados = read_csv("Life_Expectancy Data.csv",show_col_types = FALSE)
 ```
 
-```{r}
-
-# Supondo que seu dataset se chame 'dados'
-# Selecionando colunas específicas + primeiras 5 linhas
+```{r echo = FALSE}
 dados_selecionados <- dados %>%
-  select(`Life expectancy`, Year,Alcohol,Schooling,`Adult Mortality`,Population) %>%  # substitua pelos nomes reais
+  select(`Life expectancy`, `Adult Mortality`,Schooling,Population) %>%  
   head(5)
 
 kable(dados_selecionados, 
@@ -69,4 +66,17 @@ kable(dados_selecionados,
 ```
 
 
+Para uma análise exploratória inicial, a Tabela 1 apresenta uma amostra das primeiras 5 observações do conjunto de dados, destacando variáveis representativas de cada categoria analisada. Especificamente, são mostradas:
+
+Expectativa de Vida (Life expectancy): Variável resposta (Y) do estudo, representando o desfecho principal a ser explicado pelos demais fatores
+
+Mortalidade Adulta (Adult Mortality): Exemplar dos fatores de mortalidade
+
+Escolaridade (Schooling): Representante dos fatores sociais
+
+População (Population): Variável demográfica de contexto
+
+
+
+A seleção da Expectativa de Vida como variável resposta fundamenta-se no objetivo central deste estudo: compreender quais fatores exercem maior influência sobre este indicador de saúde populacional. As demais variáveis apresentadas representam categorias específicas que serão exploradas em profundidade nas análises subsequentes.
 

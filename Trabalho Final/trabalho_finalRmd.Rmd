@@ -1,8 +1,10 @@
 ---
 title: "Trabalho 1 - ME613 : Análise de Regressão"
 author: |
-  **Lucas Lima**  
-  RA: 263267
+  **Lucas Lima**:    RA: 263267
+  **Geovani Ariel**: RA: 236124
+  **Daniela Cielo**: RA: 298825
+  
 date: "2º semestre de 2025"
 output:
   pdf_document:

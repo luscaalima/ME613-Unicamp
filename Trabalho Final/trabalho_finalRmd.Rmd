@@ -33,6 +33,47 @@ library(ggcorrplot)
 library(gridExtra)
 ```
 
+
+
+```{r echo = FALSE}
+# Lendo o conjunto de dados 
+dados = read_csv("Life_Expectancy Data.csv",show_col_types = FALSE)
+# Traduzindo as colunas para o portugues
+novas_colunas <- c(
+  "Country" = "País",
+  "Year" = "Ano",
+  "Status" = "Status_País",
+  "Adult Mortality" = "Mortalidade_Adulto",
+  "infant deaths" = "Mortalidade_Infantil",
+  "Hepatitis B" = "Hepatite_B",
+  "Polio" = "Poliomielite",
+  "GDP" = "PIB", # Supondo que seja GDP (Produto Interno Bruto)
+  "Income composition of resources" = "Composicao_Renda_Recursos",
+  "Measles" = "Sarampo",
+  "Total expenditure" = "Despesa_Total",
+  "Population" = "Populacao",
+  "Schooling" = "Escolaridade",
+  "status" = "Status",
+  "Life expectancy" = "Expectativa_Vida",
+  "Alcohol" = "Alcool",
+  "percentage expenditure" = "Percentual_Despesa",
+  "BMI" = "IMC",
+  "under-five deaths" = "Mortes_Menores_Cinco_Anos",
+  "Diphtheria" = "Difteria",
+  "HIV/AIDS" = "HIV_AIDS",
+  "thinness  1-19 years" = "Magreza_1_19_Anos",
+  "thinness 5-9 years" = "Magreza_5_9_Anos"
+)
+```
+
+
+
+
+
+
+
+
+
 # Introdução e Motivação
 
 A expectativa de vida é um indicador fundamental para avaliar o nível de desenvolvimento de um país, refletindo aspectos econômicos, sociais e de saúde pública. Diversos estudos ao longo das últimas décadas analisaram fatores que influenciam esse indicador, considerando principalmente variáveis demográficas, composição de renda e taxas de mortalidade. No entanto, lacunas importantes ainda permanecem, especialmente no que diz respeito ao papel de fatores de imunização e ao uso de indicadores mais amplos de desenvolvimento humano.
@@ -52,10 +93,7 @@ A escolha dessas categorias busca fornecer uma visão ampla sobre a diversidade 
 
 Dessa forma, este estudo tem como principal motivação identificar e quantificar quais fatores — entre imunização, mortalidade, condições econômicas e indicadores sociais — exercem maior influência sobre a expectativa de vida. Com isso, pretende-se fornecer subsídios que auxiliarão gestores públicos e instituições de saúde na priorização de políticas públicas e intervenções capazes de melhorar a qualidade de vida da população.
 
-```{r echo = FALSE}
-# Lendo o conjunto de dados 
-dados = read_csv("Life_Expectancy Data.csv",show_col_types = FALSE)
-```
+
 
 ```{r echo = FALSE}
 dados_selecionados <- dados %>%

@@ -1,20 +1,23 @@
 ---
 title: "Trabalho 1 - ME613 : Análise de Regressão"
 author: |
-  **Lucas Lima**:    RA: 263267
-  **Geovani Ariel**: RA: 236124
-  **Daniela Cielo**: RA: 298825
-  
+  **Lucas Lima** — RA: 263267  
+  **Geovani Ariel** — RA: 236124  
+  **Daniela Cielo** — RA: 298825
 date: "2º semestre de 2025"
 output:
   pdf_document:
-    # latex_engine: xelatex
-    toc: true       # gera sumário
+    toc: true
     toc_depth: 2
+  html_document:
+    toc: true
+    toc_depth: 2
+    df_print: paged
 fontsize: 12pt
 geometry: margin=2.5cm
 lang: "pt-BR"
 ---
+
 ```{r, include=FALSE}
 # Importando bibliotecas
 library(ggplot2)
@@ -38,11 +41,12 @@ library(gridExtra)
 ```{r echo = FALSE}
 # Lendo o conjunto de dados 
 dados = read_csv("Life_Expectancy Data.csv",show_col_types = FALSE)
+
 # Traduzindo as colunas para o portugues
 novas_colunas <- c(
-  "Country" = "País",
+  "Country" = "Pais",
   "Year" = "Ano",
-  "Status" = "Status_País",
+  "Status" = "Status_Pais",
   "Adult Mortality" = "Mortalidade_Adulto",
   "infant deaths" = "Mortalidade_Infantil",
   "Hepatitis B" = "Hepatite_B",
@@ -64,6 +68,11 @@ novas_colunas <- c(
   "thinness  1-19 years" = "Magreza_1_19_Anos",
   "thinness 5-9 years" = "Magreza_5_9_Anos"
 )
+
+# Renomeando as colunas
+names(dados) <- dplyr::recode(names(dados), !!!novas_colunas)
+
+
 ```
 
 
@@ -74,49 +83,296 @@ novas_colunas <- c(
 
 
 
-# Introdução e Motivação
+# Introdução e Motivação ( A ser arrumado )
 
 A expectativa de vida é um indicador fundamental para avaliar o nível de desenvolvimento de um país, refletindo aspectos econômicos, sociais e de saúde pública. Diversos estudos ao longo das últimas décadas analisaram fatores que influenciam esse indicador, considerando principalmente variáveis demográficas, composição de renda e taxas de mortalidade. No entanto, lacunas importantes ainda permanecem, especialmente no que diz respeito ao papel de fatores de imunização e ao uso de indicadores mais amplos de desenvolvimento humano.
 
 Além disso, grande parte das pesquisas anteriores utilizou modelos de regressão baseados em dados de apenas um ano, o que limita a compreensão de tendências temporais e padrões de variação entre países. Esse cenário motiva a realização de uma análise mais abrangente, aproveitando dados longitudinais e modelos estatísticos que permitam capturar heterogeneidade entre diferentes regiões do mundo.
 
-O conjunto de dados utilizado neste trabalho foi construído a partir de informações disponibilizadas pelo *Global Health Observatory* (GHO), da Organização Mundial da Saúde (OMS), e dados econômicos obtidos da Organização das Nações Unidas (ONU). O dataset final reúne indicadores de saúde e socioeconômicos de 193 países ao longo do período de 2000 a 2015, permitindo investigar a evolução da expectativa de vida e os fatores que mais contribuem para sua variação.
+<!-- O conjunto de dados utilizado neste trabalho foi construído a partir de informações disponibilizadas pelo *Global Health Observatory* (GHO), da Organização Mundial da Saúde (OMS), e dados econômicos obtidos da Organização das Nações Unidas (ONU). O dataset final reúne indicadores de saúde e socioeconômicos de 193 países ao longo do período de 2000 a 2015, permitindo investigar a evolução da expectativa de vida e os fatores que mais contribuem para sua variação. -->
 
-Entre as variáveis de interesse destacam-se:
+<!-- Entre as variáveis de interesse destacam-se: -->
 
-- **Fatores de imunização:** Hepatite B, Poliomielite e Difteria;  
-- **Fatores de mortalidade:** mortalidade infantil, mortalidade adulta, entre outros;  
-- **Fatores econômicos:** PIB per capita, índices de desenvolvimento, gastos públicos;  
-- **Fatores sociais:** escolaridade média, infraestrutura e condições de vida;  
+<!-- - **Fatores de imunização:** Hepatite B, Poliomielite e Difteria;   -->
+<!-- - **Fatores de mortalidade:** mortalidade infantil, mortalidade adulta, entre outros;   -->
+<!-- - **Fatores econômicos:** PIB per capita, índices de desenvolvimento, gastos públicos;   -->
+<!-- - **Fatores sociais:** escolaridade média, infraestrutura e condições de vida;   -->
 
-A escolha dessas categorias busca fornecer uma visão ampla sobre a diversidade de elementos que impactam diretamente a saúde da população. Durante o processamento dos dados, foram identificados valores ausentes principalmente nas variáveis relacionadas ao PIB, população e taxas de imunização. A maior parte desses casos correspondia a países pequenos ou com baixa disponibilidade de dados, como Tonga, Cabo Verde e Vanuatu. Por esse motivo, optou-se por excluir essas observações, resultando em um dataset final com 22 variáveis e 2.938 registros.
+<!-- A escolha dessas categorias busca fornecer uma visão ampla sobre a diversidade de elementos que impactam diretamente a saúde da população. Durante o processamento dos dados, foram identificados valores ausentes principalmente nas variáveis relacionadas ao PIB, população e taxas de imunização. A maior parte desses casos correspondia a países pequenos ou com baixa disponibilidade de dados, como Tonga, Cabo Verde e Vanuatu. Por esse motivo, optou-se por excluir essas observações, resultando em um dataset final com 22 variáveis e 2.938 registros. -->
 
-Dessa forma, este estudo tem como principal motivação identificar e quantificar quais fatores — entre imunização, mortalidade, condições econômicas e indicadores sociais — exercem maior influência sobre a expectativa de vida. Com isso, pretende-se fornecer subsídios que auxiliarão gestores públicos e instituições de saúde na priorização de políticas públicas e intervenções capazes de melhorar a qualidade de vida da população.
+<!-- Dessa forma, este estudo tem como principal motivação identificar e quantificar quais fatores — entre imunização, mortalidade, condições econômicas e indicadores sociais — exercem maior influência sobre a expectativa de vida. Com isso, pretende-se fornecer subsídios que auxiliarão gestores públicos e instituições de saúde na priorização de políticas públicas e intervenções capazes de melhorar a qualidade de vida da população. -->
 
 
+
+
+
+
+<!-- Para uma análise exploratória inicial, a Tabela 1 apresenta uma amostra das primeiras 5 observações do conjunto de dados, destacando variáveis representativas de cada categoria analisada. Especificamente, são mostradas: -->
+
+<!-- Expectativa de Vida (Life expectancy): Variável resposta (Y) do estudo, representando o desfecho principal a ser explicado pelos demais fatores -->
+
+<!-- Mortalidade Adulta (Adult Mortality): Exemplar dos fatores de mortalidade -->
+
+<!-- Escolaridade (Schooling): Representante dos fatores sociais -->
+
+<!-- População (Population): Variável demográfica de contexto -->
+
+
+
+<!-- A seleção da Expectativa de Vida como variável resposta fundamenta-se no objetivo central deste estudo: compreender quais fatores exercem maior influência sobre este indicador de saúde populacional. As demais variáveis apresentadas representam categorias específicas que serão exploradas em profundidade nas análises subsequentes. -->
+
+
+# Análise Descritiva
 
 ```{r echo = FALSE}
-dados_selecionados <- dados %>%
-  select(`Life expectancy`, `Adult Mortality`,Schooling,Population) %>%  
-  head(5)
+# Resumo geral da base
+# resumo_geral <- dados %>%
+#   summarise(
+#     n_obs    = n(),
+#     n_paises = n_distinct(Pais),
+#     ano_min  = min(Ano, na.rm = TRUE),
+#     ano_max  = max(Ano, na.rm = TRUE)
+#   )
+# 
+# kable(
+#   resumo_geral,
+#   caption = "Resumo geral da base de dados"
+# ) %>%
+#   kable_styling(full_width = FALSE)
 
-kable(dados_selecionados, 
-      caption = "Primeiras 5 observações - Colunas selecionadas",
-      align = c("l", "c", "r", "c"))  # alinhamento das colunas
+
+## A SER AJUSTADO 
+
+# resumo_geral <- dados %>%
+#   summarise(
+#     `Nº total de observações` = n(),
+#     `Nº de países` = n_distinct(Pais),
+#     `Ano inicial` = min(Ano, na.rm = TRUE),
+#     `Ano final` = max(Ano, na.rm = TRUE),
+#     `Período (anos)` = max(Ano, na.rm = TRUE) - min(Ano, na.rm = TRUE) + 1
+#   ) %>%
+#   mutate(`Ano inicial` = as.integer(`Ano inicial`),
+#          `Ano final` = as.integer(`Ano final`))
+# 
+# kable(
+#   resumo_geral,
+#   caption = "Resumo Geral da Base de Dados",
+#   align = c('c', 'c', 'c', 'c', 'c')
+# ) %>%
+#   kable_styling(
+#     full_width = FALSE,
+#     bootstrap_options = c("striped", "hover", "condensed"),
+#     font_size = 12,
+#     position = "center"
+#   ) %>%
+#   add_header_above(c(" " = 1, " " = 1, "Cobertura Temporal" = 3)) %>%
+#   footnote(
+#     general = "Dados referentes ao período 2000-2015, abrangendo 193 países",
+#     general_title = "Nota:",
+#     footnote_as_chunk = TRUE
+#   )
+
+
+```
+
+```{r echo=FALSE}
+# resumo_geral <- dados %>%
+#   summarise(
+#     `Nº total de observações` = n(),
+#     `Nº de países` = n_distinct(Pais),
+#     `Ano inicial` = min(Ano, na.rm = TRUE),
+#     `Ano final` = max(Ano, na.rm = TRUE),
+#     `Período (anos)` = max(Ano, na.rm = TRUE) - min(Ano, na.rm = TRUE) + 1
+#   ) %>%
+#   mutate(`Ano inicial` = as.integer(`Ano inicial`),
+#          `Ano final` = as.integer(`Ano final`))
+# 
+# kable(
+#   resumo_geral,
+#   caption = "Resumo Geral da Base de Dados",
+#   align = c('c', 'c', 'c', 'c', 'c')
+# ) %>%
+#   kable_styling(
+#     full_width = FALSE,
+#     bootstrap_options = c("striped", "hover", "condensed"),
+#     font_size = 12,
+#     position = "center"
+#   ) %>%
+#   add_header_above(c(" " = 1, " " = 1, "Cobertura Temporal" = 3)) %>%
+#   footnote(
+#     general = "Dados referentes ao período 2000-2015, abrangendo 193 países",
+#     general_title = "Nota:",
+#     footnote_as_chunk = TRUE
+#   )
+
 ```
 
 
-Para uma análise exploratória inicial, a Tabela 1 apresenta uma amostra das primeiras 5 observações do conjunto de dados, destacando variáveis representativas de cada categoria analisada. Especificamente, são mostradas:
+```{r echo = FALSE}
+# Quantidade e percentual de NA por variável
+# na_por_var <- dados %>%
+#   summarise(across(everything(), ~ sum(is.na(.)))) %>%
+#   pivot_longer(
+#     cols      = everything(),
+#     names_to  = "Variavel",
+#     values_to = "N_NA"
+#   ) %>%
+#   mutate(Perc_NA = 100 * N_NA / nrow(dados)) %>%
+#   arrange(desc(Perc_NA))
+# 
+# kable(
+#   na_por_var,
+#   caption = "Quantidade e percentual de valores faltantes por variável",
+#   digits  = 2
+# ) %>%
+#   kable_styling(full_width = FALSE)
+```
 
-Expectativa de Vida (Life expectancy): Variável resposta (Y) do estudo, representando o desfecho principal a ser explicado pelos demais fatores
+```{r echo = FALSE}
+# Resumo descritivo da variável resposta
+# resumo_expectativa <- dados %>%
+#   summarise(
+#     n       = sum(!is.na(Expectativa_Vida)),
+#     media   = mean(Expectativa_Vida, na.rm = TRUE),
+#     sd      = sd(Expectativa_Vida, na.rm = TRUE),
+#     min     = min(Expectativa_Vida, na.rm = TRUE),
+#     q1      = quantile(Expectativa_Vida, 0.25, na.rm = TRUE),
+#     mediana = median(Expectativa_Vida, na.rm = TRUE),
+#     q3      = quantile(Expectativa_Vida, 0.75, na.rm = TRUE),
+#     max     = max(Expectativa_Vida, na.rm = TRUE)
+#   )
+# 
+# kable(
+#   resumo_expectativa,
+#   caption = "Resumo descritivo da variável Expectativa_Vida",
+#   digits  = 2
+# ) %>%
+#   kable_styling(full_width = FALSE)
+```
 
-Mortalidade Adulta (Adult Mortality): Exemplar dos fatores de mortalidade
+```{r echo = FALSE}
+# Comparação da expectativa de vida por status do país
+# resumo_status <- dados %>%
+#   group_by(Status_Pais) %>%
+#   summarise(
+#     n       = sum(!is.na(Expectativa_Vida)),
+#     media   = mean(Expectativa_Vida, na.rm = TRUE),
+#     sd      = sd(Expectativa_Vida, na.rm = TRUE),
+#     min     = min(Expectativa_Vida, na.rm = TRUE),
+#     q1      = quantile(Expectativa_Vida, 0.25, na.rm = TRUE),
+#     mediana = median(Expectativa_Vida, na.rm = TRUE),
+#     q3      = quantile(Expectativa_Vida, 0.75, na.rm = TRUE),
+#     max     = max(Expectativa_Vida, na.rm = TRUE),
+#     .groups = "drop"
+#   )
+# 
+# kable(
+#   resumo_status,
+#   caption = "Resumo da Expectativa_Vida por Status do país",
+#   digits  = 2
+# ) %>%
+#   kable_styling(full_width = FALSE)
+```
 
-Escolaridade (Schooling): Representante dos fatores sociais
+```{r echo = FALSE}
+# Evolucao temporal da expectativa de vida (media global por ano)
+le_ano <- dados %>%
+  group_by(Ano) %>%
+  summarise(
+    media_le = mean(Expectativa_Vida, na.rm = TRUE),
+    .groups  = "drop"
+  )
 
-População (Population): Variável demográfica de contexto
+ggplot(le_ano, aes(x = Ano, y = media_le)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x     = "Ano",
+    y     = "Expectativa de vida media",
+    title = "Evolucao temporal da expectativa de vida (media global)"
+  ) +
+  theme_minimal()
+```
+
+```{r echo = FALSE}
+# Evolucao temporal por Status_Pais
+le_ano_status <- dados %>%
+  group_by(Ano, Status_Pais) %>%
+  summarise(
+    media_le = mean(Expectativa_Vida, na.rm = TRUE),
+    .groups  = "drop"
+  )
+
+ggplot(le_ano_status, aes(x = Ano, y = media_le, color = Status_Pais)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    x     = "Ano",
+    y     = "Expectativa de vida media",
+    color = "Status do pais",
+    title = "Evolucao da expectativa de vida por status do pais"
+  ) +
+  theme_minimal()
+```
+
+```{r echo = FALSE}
+# QUERO DEIXAR VISUALMENTE MAIS ATRATIVO ESSA MATRIZ DE CORRELACAO
+
+
+# Matriz de correlacao para subconjunto de variaveis
+vars_corr <- dados %>%
+  select(
+    Expectativa_Vida,
+    Mortalidade_Adulto,
+    Mortalidade_Infantil,
+    IMC,
+    HIV_AIDS,
+    PIB,
+    Composicao_Renda_Recursos,
+    Escolaridade,
+    Magreza_1_19_Anos,
+    Magreza_5_9_Anos
+  ) %>%
+  drop_na(Expectativa_Vida)
+
+# Calcula matriz de correlacao
+cor_mat <- cor(vars_corr, use = "pairwise.complete.obs")
+
+# Grafico de correlacao com ggcorrplot
+ggcorrplot(
+  cor_mat,
+  lab       = TRUE,   # mostra os valores
+  lab_size  = 2.5,    # diminui o tamanho dos numeros
+  type      = "lower",
+  show.diag = TRUE
+) +
+  labs(
+    title = "Matriz de correlacao das variaveis selecionadas"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # gira os nomes das variaveis
+  )
+```
 
 
 
-A seleção da Expectativa de Vida como variável resposta fundamenta-se no objetivo central deste estudo: compreender quais fatores exercem maior influência sobre este indicador de saúde populacional. As demais variáveis apresentadas representam categorias específicas que serão exploradas em profundidade nas análises subsequentes.
+A análise descritiva realizada evidencia que a Expectativa_Vida apresenta valores bastante heterogêneos entre países e ao longo do tempo, com amplitude ampla entre os menores e maiores níveis observados. Mesmo assim, a distribuição concentra-se em torno de valores intermediários a altos, sugerindo que a maior parte das observações corresponde a países em estágios de desenvolvimento em que a transição epidemiológica já avançou em alguma medida.
+
+Quando a variável resposta é comparada entre os diferentes níveis de Status_Pais, verifica-se uma diferença clara entre países classificados como desenvolvidos e em desenvolvimento. De modo geral, países desenvolvidos apresentam expectativa de vida média mais alta e menor variabilidade, enquanto países em desenvolvimento exibem média mais baixa e maior dispersão. Esse padrão é consistente com o esperado teoricamente, refletindo desigualdades em termos de infraestrutura de saúde, condições socioeconômicas e acesso a políticas públicas efetivas.
+
+A análise temporal mostra uma tendência de aumento da expectativa de vida ao longo dos anos no conjunto da amostra. Esse crescimento sugere avanços globais em cuidados de saúde, imunização, controle de doenças infecciosas e melhoria de condições de vida. No entanto, a velocidade desse aumento pode variar entre os grupos de países, indicando que parte das desigualdades em saúde persiste ao longo do tempo.
+
+Os resultados da matriz de correlação reforçam a interpretação de que a expectativa de vida é um indicador fortemente associado tanto a fatores de mortalidade quanto a fatores sociais e econômicos. Entre as associações negativas mais fortes destacam-se as correlações com Mortalidade_Adulto, Mortalidade_Infantil, Magreza_1_19_Anos e Magreza_5_9_Anos, além de variáveis relacionadas à carga de doenças, como HIV_AIDS. Essas relações sugerem que contextos com maior carga de mortalidade e desnutrição tendem a apresentar expectativa de vida substancialmente menor, o que é coerente com a compreensão epidemiológica tradicional.
+
+Por outro lado, a expectativa de vida apresenta correlações positivas importantes com Escolaridade, Composicao_Renda_Recursos, PIB e, em menor medida, com variáveis associadas à cobertura vacinal e à condição nutricional (como IMC). Esses resultados indicam que maior desenvolvimento socioeconômico e maior capital humano estão associados a maior longevidade, possivelmente por meio de melhor acesso a serviços de saúde, maior capacidade de prevenção de doenças e melhores condições gerais de vida.
+
+Do ponto de vista da modelagem, a EDA sugere que:
+	•	Existem diversos preditores com correlação forte ou moderada com a Expectativa_Vida, o que é promissor para a construção de modelos de regressão com bom poder explicativo;
+	•	Algumas variáveis explicativas são entre si fortemente correlacionadas, o que levanta a hipótese de multicolinearidade e reforça a necessidade de uma etapa cuidadosa de seleção de variáveis e diagnóstico do modelo;
+	•	A presença de valores faltantes em variáveis importantes (como PIB, Populacao ou alguns indicadores de saúde) deve ser tratada com cuidado, seja por meio de exclusão de casos, imputação ou construção de modelos alternativos, para não introduzir viés nas estimativas.
+
+Em síntese, a análise exploratória confirma a relevância da Expectativa_Vida como indicador-síntese de desenvolvimento e aponta um conjunto coerente de variáveis candidatas a preditoras, abrangendo dimensões de mortalidade, imunização, condição econômica e fatores sociais. Esses achados fornecem uma base sólida para a etapa seguinte do trabalho, na qual serão propostos modelos de regressão com o objetivo de quantificar a contribuição relativa de cada fator e avaliar o ajuste global do modelo à realidade observada.
+
+
 

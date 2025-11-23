@@ -651,7 +651,6 @@ kable(
 
 # Referencias bibliograficas
 
-(Preencher com as referencias utilizadas no trabalho, por exemplo:)
 
 - World Health Organization (WHO). World Health Statistics.  
 - Montgomery, D. C., Peck, E. A., & Vining, G. G. (2012). *Introduction to Linear Regression Analysis*.  

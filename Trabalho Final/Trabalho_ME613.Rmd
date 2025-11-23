@@ -197,7 +197,7 @@ resumo_expectativa <- dados %>%
 
 kable(
   resumo_expectativa,
-  caption = "Resumo descritivo da variavel Expectativa_Vida",
+  caption = "Resumo descritivo da variavel resposta",
   digits  = 2
 ) %>%
   kable_styling(full_width = FALSE)
@@ -223,7 +223,7 @@ resumo_status <- dados %>%
 
 kable(
   resumo_status,
-  caption = "Resumo da Expectativa_Vida por Status do pais",
+  caption = "Resumo da expectativa de vida por status do pais",
   digits  = 2
 ) %>%
   kable_styling(full_width = FALSE)
@@ -307,7 +307,7 @@ cor_com_resposta <- cor_num %>%
 
 kable(
   cor_com_resposta,
-  caption = "Correlacao de cada variavel numerica com Expectativa_Vida",
+  caption = "Correlacao de cada variavel numerica com a resposta",
   digits  = 3
 ) %>%
   kable_styling(full_width = FALSE)
@@ -458,7 +458,7 @@ kable(
     Linhas  = dim_dados_modelo[1],
     Colunas = dim_dados_modelo[2]
   ),
-  caption = "Dimensões da base de dados para modelagem (dados_modelo)"
+  caption = "Dimensoes da base de dados para modelagem"
 ) %>%
   kable_styling(full_width = FALSE)
 ```
@@ -546,6 +546,7 @@ summary(modelo_completo)
 
 
 ```{r}
+# VIF do modelo completo
 vif_completo <- car::vif(modelo_completo)
 
 vif_completo_df <- tibble::tibble(
@@ -553,7 +554,12 @@ vif_completo_df <- tibble::tibble(
   VIF      = as.numeric(vif_completo)
 ) %>%
   arrange(desc(VIF))
-vif_completo
+
+knitr::kable(
+  vif_completo_df,
+  caption = "Fatores de inflacao da variancia (VIF) - modelo completo",
+  digits  = 2
+)
 
 ```
 
@@ -568,24 +574,22 @@ modelo_step <- step(
 
 # Resumo global do modelo selecionado
 resumo_global_step <- broom::glance(modelo_step) %>%
-  select(r.squared, adj.r.squared, sigma, AIC, BIC, df, df.residual)
+  dplyr::select(r.squared, adj.r.squared, sigma, AIC, BIC, df, df.residual)
 
-kable(
+knitr::kable(
   resumo_global_step,
   caption = "Resumo global do modelo selecionado via AIC (stepwise)",
   digits  = 3
-) %>%
-  kable_styling(full_width = FALSE)
+)
 
 # Estimativas dos coeficientes do modelo selecionado
 coeficientes_step <- broom::tidy(modelo_step)
 
-kable(
+knitr::kable(
   coeficientes_step,
-  caption = "Estimativas dos coeficientes – modelo selecionado (stepwise)",
+  caption = "Estimativas dos coeficientes do modelo selecionado (stepwise)",
   digits  = 3
-) %>%
-  kable_styling(full_width = FALSE)
+)
 ```
 
 

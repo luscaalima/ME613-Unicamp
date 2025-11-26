@@ -383,6 +383,8 @@ kable(
 A identificacao de pares de preditores com **alta correlacao** e importante para evitar problemas de multicolinearidade na regressao. Nesse contexto, destaca-se o par formado por **Magreza_1_19_Anos** e **Magreza_5_9_Anos**, que apresentam correlacao elevada entre si e medem fenomenos muito proximos (magreza em faixas etarias infantis semelhantes).
 
 
+
+
 <!-- ### Matriz de correlacao para um subconjunto de variaveis -->
 
 ```{r echo = FALSE}
@@ -402,25 +404,6 @@ vars_corr <- dados %>%
   drop_na(Expectativa_Vida)
 # 
  cor_mat <- cor(vars_corr, use = "pairwise.complete.obs")
-# 
-# ggcorrplot(
-#   cor_mat,
-#   lab       = TRUE,
-#   lab_size  = 2.5,
-#   type      = "upper",
-#   show.diag = TRUE
-# ) 
-# +
-#   labs(
-#     # title = "Matriz de correlacao das variaveis selecionadas"
-#   ) +
-#   
-#   theme_minimal() +
-#   theme(
-#     axis.text.x = element_text(angle = 45, hjust = 1)
-#   )
-
-
 
 ggcorrplot(
   method = "square",
@@ -428,8 +411,8 @@ ggcorrplot(
   cor_mat,
   type = "upper",
   lab = TRUE,
-  lab_size = 2.5,
-  tl.cex = 12,           
+  lab_size = 2,
+  tl.cex = 10,           
   tl.srt = 45,          
   digits = 2 ,
   colors = cores_base,
@@ -452,11 +435,11 @@ Com base nas informacoes de NA e de correlacao, adotamos duas decisoes para a co
 
 1. **Exclusao de Populacao e Hepatite_B**: ambas apresentaram **alta proporcao de valores faltantes** e **correlacao fraca com Expectativa_Vida**, de modo que sua inclusao no modelo reduziria o numero de casos disponiveis sem trazer ganho relevante de explicacao.
 
-2. **Combinacao de Magreza_1_19_Anos e Magreza_5_9_Anos em Magreza_media**: as duas variaveis sao altamente correlacionadas e representam a mesma dimensao (magreza infantil em faixas etarias proximas). Para reduzir dimensionalidade e multicolinearidade, definimos uma unica variavel:
+2. **Combinacao de Magreza_1_19_Anos e Magreza_5_9_Anos em Magreza**: as duas variaveis sao altamente correlacionadas e representam a mesma dimensao (magreza infantil em faixas etarias proximas). Para reduzir dimensionalidade e multicolinearidade, definimos uma unica variavel:
 
-$begin:math:display$
-\\text\{Magreza\\\_media\} \= \\frac\{\\text\{Magreza\\\_1\\\_19\\\_Anos\} \+ \\text\{Magreza\\\_5\\\_9\\\_Anos\}\}\{2\}\.
-$end:math:display$
+<!-- $begin:math:display$ -->
+<!-- \\text\{Magreza\\\_media\} \= \\frac\{\\text\{Magreza\\\_1\\\_19\\\_Anos\} \+ \\text\{Magreza\\\_5\\\_9\\\_Anos\}\}\{2\}\. -->
+<!-- $end:math:display$ -->
 
-Na base de modelagem, utilizamos apenas **Magreza_media**, mantendo as variaveis originais apenas para a analise exploratoria.
+<!-- Na base de modelagem, utilizamos apenas **Magreza_media**, mantendo as variaveis originais apenas para a analise exploratoria. -->
 

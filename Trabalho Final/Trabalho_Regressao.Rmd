@@ -4,19 +4,20 @@ author: |
   **Daniela Cielo**: RA: 298825                                                                 
   **Geovani Ariel**: RA: 236124  
   **Lucas Lima**:    RA: 263267
-
 date: "2º semestre de 2025"
 output:
   pdf_document:
-    toc: true
-    toc_depth: 2
+    latex_engine: xelatex
 fontsize: 12pt
 geometry: margin=2.5cm
 lang: "pt-BR"
+editor_options: 
+  markdown: 
+    wrap: sentence
 ---
 
 ```{r, include=FALSE}
-
+tinytex::reinstall_tinytex()
 library(readr)
 library(tidyr)
 library(tidyverse)
@@ -24,22 +25,17 @@ library(stringr)
 library(magrittr)
 library(lubridate)
 library(knitr)
-library(dplyr)
 library(kableExtra)
 library(GGally)
 library(ggplot2)
 library(ggcorrplot)
 library(gridExtra)
-# Pacotes usados no trabalho
-library(tidyverse)   # ggplot2, dplyr, tidyr, readr, stringr, etc.
-library(lubridate)
-library(knitr)
-library(kableExtra)
-library(GGally)
-library(ggcorrplot)
-library(gridExtra)
 library(car)
 library(broom)
+library(janitor)
+library(MASS)
+library(lmtest)
+library(dplyr)
 
 
  cores_base <- c("#ABD9E9", "#2C7BB6",'grey')
@@ -56,88 +52,92 @@ knitr::opts_chunk$set(
 theme_set(theme_minimal())
 ```
 
-# Introducao e Motivacao
+# Introdução
 
-A expectativa de vida e um indicador fundamental para avaliar o nivel de saude e desenvolvimento de uma populacao, refletindo nao apenas as condicoes medicas, mas tambem fatores socioeconomicos, ambientais e de politicas publicas. Ao sintetizar o tempo medio de vida que uma coorte hipotetica de individuos teria, caso permanecessem expostos as taxas de mortalidade observadas em determinado periodo, esse indicador fornece uma visao abrangente das condicoes de vida em diferentes paises e contextos historicos.
+A **expectativa de vida** é um dos indicadores mais utilizados para sintetizar o nível de saúde e desenvolvimento humano. Em geral, países com maior renda, melhor infraestrutura sanitária e maior escolaridade tendem a apresentar maior longevidade — embora essas relações não sejam necessariamente **lineares**, **independentes** ou **estáveis ao longo do tempo**.
 
-Nas ultimas decadas, o aumento da expectativa de vida tem sido um dos fenomenos demograficos mais marcantes em grande parte do mundo, especialmente em paises desenvolvidos. No entanto, essa evolucao nao e homogenea: muitas regioes ainda enfrentam desafios importantes relacionados a mortalidade infantil, doencas infecciosas, desnutricao, desigualdade de renda e acesso limitado a servicos basicos de saude e educacao. Essas disparidades revelam que ganhos agregados em expectativa de vida podem ocultar heterogeneidades relevantes entre paises, grupos populacionais e periodos de tempo.
+Neste trabalho analisamos dados em painel (**país × ano**) contendo indicadores socioeconômicos e de saúde. Nosso objetivo é modelar a **expectativa de vida** como função de diversas covariáveis, avaliando sua importância relativa e discutindo limitações do modelo linear aplicado.
 
-Do ponto de vista de politicas publicas, compreender os determinantes da expectativa de vida e essencial para orientar decisoes estrategicas, como priorizacao de investimentos em saude, educacao e infraestrutura social. Alem disso, a analise conjunta de variaveis de mortalidade, indicadores economicos e fatores sociais permite investigar em que medida os avancos em desenvolvimento humano se traduzem, de fato, em melhores condicoes de sobrevivencia e bem-estar da populacao.
+# Perguntas de pesquisa
 
-Nesse contexto, este trabalho analisa a relacao entre a expectativa de vida e um conjunto de variaveis explicativas associadas a fatores de mortalidade, imunizacao, condicoes economicas e fatores sociais, utilizando um conjunto de dados em painel com paises observados ao longo do tempo. A partir de tecnicas de analise exploratoria e modelagem de regressao, busca-se identificar quais fatores apresentam maior associacao com a expectativa de vida e discutir implicacoes para politicas publicas e planejamento em saude.
+As perguntas norteadoras deste estudo são:
+
+1. **Quais fatores estão mais fortemente associados à expectativa de vida após controlar pelos demais?**
+2. **Quanto a escolaridade média contribui para a expectativa de vida**, após ajustar por mortalidade adulta, mortalidade infantil, imunização e outros indicadores?
+3. **A classificação de país desenvolvido** explica diferenças de expectativa de vida mesmo após controlar por covariáveis de saúde e renda?
+4. **Há tendência temporal positiva** ao longo dos anos observados?
+
+# Hipóteses
+
+As hipóteses substantivas consideradas são:
+
+- **H1:** Maior escolaridade média → maior expectativa de vida.
+- **H2:** Maior mortalidade adulta → menor expectativa de vida.
+- **H3:** Maior mortalidade infantil → menor expectativa de vida.
+- **H4:** Países desenvolvidos apresentam maior expectativa de vida mesmo após controle.
+- **H5:** A expectativa de vida apresenta **tendência crescente** ao longo dos anos.
+
+Essas hipóteses refletem padrões amplamente discutidos na literatura e servem como base teórica para nossas análises.
 
 
+#Materiais e Métodos
 
-
-# Materiais e Metodos
-
-Nesta seção descrevemos o banco de dados utilizado, as variaveis consideradas e os principais procedimentos adotados no tratamento e na preparacao dos dados para analise.
-
-## Base de dados e variaveis
-
-O conjunto de dados utilizado contem informacoes anuais sobre diversos paises, incluindo:
-
-- **Expectativa_Vida**: variavel resposta, medida em anos;
-
-- Indicadores de **Mortalidade** (Mortalidade_Adulto, Mortalidade_Infantil);
-- Indicadores de **Saude e Imunizacao** (Hepatite_B, Poliomielite, Difteria, HIV_AIDS);
-- Variaveis **Economicas e Sociais** (PIB, Composicao_Renda_Recursos, Escolaridade, Percentual_Despesa, Despesa_Total);
-- Variaveis **Nutricionais e Demograficas** (IMC, Magreza_1_19_Anos, Magreza_5_9_Anos, Populacao).
-
+```         
+#Leitura e rename das colunas
+```
 
 ```{r echo = FALSE}
-# Leitura do conjunto de dados original
-dados <- read_csv("Life_Expectancy Data.csv", show_col_types = FALSE)
+## Leitura do conjunto de dados original
+dados_bruto <- read.csv("Life_Expectancy Data.csv")
 
-# Traducao dos nomes das colunas para portugues (SEM acentos em nomes de variaveis)
-novas_colunas <- c(
-  "Country"                         = "Pais",
-  "Year"                            = "Ano",
-  "Status"                          = "Status_Pais",
-  "Adult Mortality"                 = "Mortalidade_Adulto",
-  "infant deaths"                   = "Mortalidade_Infantil",
-  "Hepatitis B"                     = "Hepatite_B",
-  "Polio"                           = "Poliomielite",
-  "GDP"                             = "PIB",
-  "Income composition of resources" = "Composicao_Renda_Recursos",
-  "Measles"                         = "Sarampo",
-  "Total expenditure"               = "Despesa_Total",
-  "Population"                      = "Populacao",
-  "Schooling"                       = "Escolaridade",
-  "status"                          = "Status",
-  "Life expectancy"                 = "Expectativa_Vida",
-  "Alcohol"                         = "Alcool",
-  "percentage expenditure"          = "Percentual_Despesa",
-  "BMI"                             = "IMC",
-  "under-five deaths"              = "Mortes_Menores_Cinco_Anos",
-  "Diphtheria"                      = "Difteria",
-  "HIV/AIDS"                        = "HIV_AIDS",
-  "thinness  1-19 years"            = "Magreza_1_19_Anos",
-  "thinness 5-9 years"              = "Magreza_5_9_Anos"
-)
-# Renomeando colunas
-names(dados) <- dplyr::recode(names(dados), !!!novas_colunas)
+## Opcional: inspecionar nomes originais
+## names(dados_bruto)
 
- # Ajuste de tipos mais óbvios
-dados <- dados %>%
+## Padroniza nomes para snake_case e renomeia para português
+dados <- dados_bruto |>
+  clean_names() |>  # country, year, life_expectancy, adult_mortality, ...
+  rename(
+    pais                       = country,
+    ano                        = year,
+    status_pais                = status,
+    expectativa_vida           = life_expectancy,
+    mortalidade_adulto         = adult_mortality,
+    mortalidade_infantil       = infant_deaths,
+    mortes_menores_cinco_anos  = under_five_deaths,
+    alcool                     = alcohol,
+    imc                        = bmi,
+    sarampo                    = measles,
+    poliomielite               = polio,
+    difteria                   = diphtheria,
+    hiv_aids                   = hiv_aids,
+    percentual_despesa         = percentage_expenditure,
+    despesa_total              = total_expenditure,
+    pib                        = gdp,
+    populacao                  = population,
+    magreza_1_19_anos          = thinness_1_19_years,
+    magreza_5_9_anos           = thinness_5_9_years,
+    composicao_renda_recursos  = income_composition_of_resources,
+    escolaridade               = schooling
+  ) |>
   mutate(
-    Ano        = as.integer(Ano),
-    Status_Pais = factor(Status_Pais)
-  )
-
+    status_pais = factor(
+      status_pais,
+      levels = c("Developing", "Developed"),
+      labels = c("Em desenvolvimento", "Desenvolvido")
+    )
+ )
 ```
 
 
-```{r}
-library(dplyr)
-library(kableExtra)
 
+
+```{r echo = FALSE}
 resumo_geral <- dados %>%
   summarise(
     `Nº total de observações` = n(),
-    `Nº de países`            = n_distinct(Pais),
-    `Ano inicial`             = min(Ano, na.rm = TRUE),
-    `Ano final`               = max(Ano, na.rm = TRUE),
+    `Nº de países`            = n_distinct(pais),
+    `Ano inicial`             = min(ano, na.rm = TRUE),
+    `Ano final`               = max(ano, na.rm = TRUE),
     `Período (anos)`          = `Ano final` - `Ano inicial`
   )
 
@@ -161,106 +161,76 @@ kable(
     general_title = "Nota:"
   )
 
+dados <- dados %>%
+  dplyr::select(-pais)
+
+
 ```
 
+## Base de dados e pré-processamento
 
+O banco de dados utilizado neste estudo corresponde ao conjunto **“Life Expectancy (WHO)”**, contendo informações anuais de até **193 países** no período de **2000 a 2015**. Esse conjunto reúne indicadores de mortalidade, imunização, condições socioeconômicas e fatores nutricionais e demográficos.
 
+Durante o pré-processamento, foram adotados os seguintes procedimentos:
 
+- **Verificação de consistência** e remoção de valores manifestamente inválidos.  
+- **Padronização dos tipos de variáveis** e tradução dos nomes para o português (sem acentos), facilitando a interpretação.  
+- **Remoção de variáveis com grande proporção de valores faltantes** ou baixa relevância empírica.  
+- **Tratamento de colinearidade**, com combinação de variáveis altamente correlacionadas quando apropriado.  
 
+As variáveis **Pais** e **Ano** foram mantidas apenas para identificação e visualização, já que **não representam observações independentes** e por isso não entram diretamente na modelagem de regressão.
 
-```{r}
-# Tabela antiga
-# resumo_geral <- dados %>%
-#   summarise(
-#     n_obs    = n(),
-#     n_paises = n_distinct(Pais),
-#     ano_min  = min(Ano, na.rm = TRUE),
-#     ano_max  = max(Ano, na.rm = TRUE)
-#   )
-# 
-# kable(
-#   resumo_geral,
-#   caption = "Resumo geral da base de dados"
-# ) %>%
-#   kable_styling(full_width = FALSE)
-```
+## Principais variáveis analisadas
 
+A seguir, listamos as variáveis utilizadas na etapa exploratória e de modelagem:
 
-## Avaliacao de valores faltantes
+- **Expectativa_Vida**: variável resposta, medida em anos.  
+- **Mortalidade_Adulto**: probabilidade de morte entre 15 e 60 anos por 1.000 habitantes.  
+- **Mortalidade_Infantil**: número de óbitos de menores de 1 ano por 1.000 nascidos vivos.  
+- **Mortes_Menores_Cinco_Anos**: óbitos de crianças menores de 5 anos por 1.000 habitantes.  
+- **Alcool**: consumo médio estimado de álcool per capita.  
+- **IMC**: índice de massa corporal médio da população adulta.  
+- **Sarampo**: casos notificados por unidade populacional (indicador de morbidade e imunização).  
+- **Poliomielite**: cobertura vacinal contra poliomielite (%).  
+- **Difteria**: cobertura vacinal DTP3 (%).  
+- **HIV_AIDS**: taxa de mortalidade associada ao HIV/AIDS por 100.000 habitantes.  
+- **Percentual_Despesa**: gasto público com saúde (% do PIB).  
+- **Despesa_Total**: gasto total per capita (público + privado).  
+- **PIB**: produto interno bruto per capita em dólares internacionais.  
+- **Composicao_Renda_Recursos**: componente de renda do IDH (0 a 1).  
+- **Escolaridade**: anos médios de estudo da população adulta.  
+- **Magreza_1_19_Anos** e **Magreza_5_9_Anos**: prevalência de magreza em diferentes faixas etárias infantis.  
+- **Populacao**: população total do país.  
+- **Status_Pais**: fator indicando se o país é **Desenvolvido** ou **Em desenvolvimento**.
 
-Antes da modelagem, e necessario avaliar a presenca de **valores faltantes (NA)**, pois colunas com muitos NA podem reduzir bastante o numero de observacoes utilizaveis e comprometer a estabilidade das estimativas.
+> **Nota importante:** A variável categórica *Status_Pais* foi tratada como fator, garantindo codificação consistente para regressão e visualizações.
 
+## Comentário adicional (aprofundado)
 
-```{r}
-na_por_var <- dados %>%
-  summarise(across(everything(), ~ sum(is.na(.)))) %>%
-  pivot_longer(
-    cols = everything(),
-    names_to = "Coluna",
-    values_to = "Quantidade_NA"
-  ) %>%
-  filter(Quantidade_NA > 0) %>%
-  mutate(Percentual_NA = round(100 * Quantidade_NA / nrow(dados), 2)) %>%
-  arrange(desc(Percentual_NA))
+Muitas dessas variáveis refletem **mecanismos causais distintos**, como:
+- saúde materno-infantil,  
+- infraestrutura sanitária,  
+- risco epidemiológico,  
+- escolaridade e renda,  
+- nutrição e vacinação.
 
-# Tabela compacta
-na_por_var %>%
-  kbl(align = c('l', 'c', 'c'),
-      caption = "Valores Faltantes por Coluna") %>%
-  kable_styling(
-    bootstrap_options = c("condensed", "striped"),
-    full_width = FALSE,
-    font_size = 14,
-    position = "left"
-  ) %>%
-  column_spec(1, width = "15em") %>%   # Largura fixa para nomes
-  column_spec(2, width = "10em") %>%   # Largura fixa para quantidade
-  column_spec(3, width = "10em")       # Largura fixa para percentual
-```
-Para um modelo de regressão linear, a presença de valores NA pode ser problemática porque a maioria dos algoritmos não lida bem com dados faltantes. As opções comuns são:
+Isso indica que a expectativa de vida é resultado de múltiplos determinantes inter-relacionados, justificando o uso de um **modelo multivariado** ao invés de análises univariadas ou simples correlações.
 
-1.**Remover observações com NA**: Isso pode ser feito se a quantidade de NA não for muito grande e se a remoção não introduzir viés. No entanto, se removermos todas as observações que têm pelo menos um NA, podemos acabar com um conjunto de dados muito pequeno.
+## Analíse exploratória
 
-
-2.**Remover colunas com muitos NA**: Se uma variável tem muitos NA, ela pode não ser muito informativa. Além disso, se a coluna não for muito relevante para o modelo, pode ser melhor removê-la.
-
-
-3.**Imputação de valores**: Em vez de remover, podemos preencher os valores faltantes com alguma estatística (média, mediana, moda).
-
-
-## Estrategia de análise
-
-A estrategia de análise utilizada neste trabalho segue os seguintes passos:
-
-1. **Análise descritiva da variavel resposta**, incluindo resumo estatistico e comparacao por Status_Pais e ao longo do tempo;
-2. **Análise de correlacao**, avaliando:
-   - correlacao entre cada variavel numerica e a Expectativa_Vida;
-   - correlacao entre os proprios preditores, para identificar possivel multicolinearidade;
-3. **Definicao da base para modelagem**, com:
-   - exclusao de colunas com alta proporcao de NA e baixa correlacao com a variavel resposta (**Populacao e Hepatite_B**) ;
-   - combinacao de variaveis altamente correlacionadas e conceitualmente proximas (Magreza_1_19_Anos e Magreza_5_9_Anos) em uma unica variavel **Magreza**.
-
-A modelagem de regressao (na etapa seguinte do trabalho) sera realizada utilizando essa base reduzida, mais adequada em termos de qualidade da informacao e estabilidade numerica.
-
-## Analise da variavel resposta
 ```{r echo = FALSE}
-library(dplyr)
-library(kableExtra)
-
-# Suponha que a variável resposta se chame 'Expectativa_Vida'
-# Vamos calcular as estatísticas
 
 resumo_expectativa <- dados %>%
   summarise(
     n = n(),
-    `Média` = mean(Expectativa_Vida, na.rm = TRUE),
-    `Desvio Padrão` = sd(Expectativa_Vida, na.rm = TRUE),
-    `Mínimo` = min(Expectativa_Vida, na.rm = TRUE),
-    Q1 = quantile(Expectativa_Vida, 0.25, na.rm = TRUE),
-    Mediana = median(Expectativa_Vida, na.rm = TRUE),
-    Q3 = quantile(Expectativa_Vida, 0.75, na.rm = TRUE),
-    `Máximo`= max(Expectativa_Vida, na.rm = TRUE),
-    # Missing = sum(is.na(Expectativa_Vida))
+    `Média` = mean(expectativa_vida, na.rm = TRUE),
+    `Desvio Padrão` = sd(expectativa_vida, na.rm = TRUE),
+    `Mínimo` = min(expectativa_vida, na.rm = TRUE),
+    Q1 = quantile(expectativa_vida, 0.25, na.rm = TRUE),
+    Mediana = median(expectativa_vida, na.rm = TRUE),
+    Q3 = quantile(expectativa_vida, 0.75, na.rm = TRUE),
+    `Máximo`= max(expectativa_vida, na.rm = TRUE),
+    # Missing = sum(is.na(expectativa_vida))
   )
 
 kable(
@@ -270,176 +240,770 @@ kable(
 ) %>%
   kable_styling(full_width = FALSE)
 ```
-O resumo descritivo indica que a expectativa de vida apresenta ampla variacao entre observacoes, mas com concentracao em torno de valores intermediarios a altos, sugerindo heterogeneidade entre contextos mais e menos desenvolvidos.
 
+A variável resposta deste estudo é a **Expectativa_Vida**, medida em anos. O resumo
+descritivo (Tabela 2) indica:
 
+- **Média:** 69.22 anos  
+- **Desvio-padrão:** 9.52 anos  
+- **Mínimo / Máximo:** 36.3 — 89 anos  
+- **Mediana:** 72.1 anos  
 
-```{r echo = FALSE}
-# Comparacao da expectativa de vida por status do pais
-resumo_status <- dados %>%
-  group_by(Status_Pais) %>%
-  summarise(
-    n       = sum(!is.na(Expectativa_Vida)),
-    media   = mean(Expectativa_Vida, na.rm = TRUE),
-    sd      = sd(Expectativa_Vida, na.rm = TRUE),
-    min     = min(Expectativa_Vida, na.rm = TRUE),
-    q1      = quantile(Expectativa_Vida, 0.25, na.rm = TRUE),
-    mediana = median(Expectativa_Vida, na.rm = TRUE),
-    q3      = quantile(Expectativa_Vida, 0.75, na.rm = TRUE),
-    max     = max(Expectativa_Vida, na.rm = TRUE),
-    .groups = "drop"
-  )
+A amplitude elevada revela a coexistência de países muito desenvolvidos (acima de **80 anos**) e países em situação sanitária crítica (abaixo de **50 anos**).  
 
-kable(
-  resumo_status,
-  caption = "Resumo da expectativa de vida por status do pais",
-  digits  = 2
-) %>%
-  kable_styling(full_width = FALSE)
+A distribuição apresenta **assimetria à esquerda**, com maior concentração entre 60 e 80 anos, indicando que a maior parte dos países se encontra em faixas intermediárias, enquanto valores muito baixos são menos frequentes, mas extremamente problemáticos.
+
+```{r}
+summary(dados$expectativa_vida)
+
+ggplot(dados, aes(x = expectativa_vida)) +
+  geom_histogram(bins = 30) +
+  labs(x = "Expectativa de vida (anos)", y = "Frequência")
 ```
 
-Os resultados por **Status_Pais** evidenciam que paises desenvolvidos tendem a apresentar maior expectativa de vida media e menor variabilidade, ao passo que paises em desenvolvimento exibem media menor e maior dispersao.
+###Status x Expectativa
 
-```{r echo = FALSE}
-# Evolucao temporal da expectativa de vida (media global por ano)
-le_ano <- dados %>%
-  group_by(Ano) %>%
-  summarise(
-    media_le = mean(Expectativa_Vida, na.rm = TRUE),
-    .groups  = "drop"
-  )
+O boxplot mostra clara separação entre os grupos:
 
-ggplot(le_ano, aes(x = Ano, y = media_le)) +
+- Países **Desenvolvidos** apresentam expectativa de vida entre **78 e 82 anos**, com baixa dispersão.  
+- Países **Em desenvolvimento** variam muito mais, entre **60 e 72 anos**, com presença de valores extremos baixos.
+
+
+```{r}
+ggplot(dados, aes(x = status_pais, y = expectativa_vida)) +
+  geom_boxplot() +
+  labs(x = "Status do país", y = "Expectativa de vida (anos)")
+```
+
+
+## Evolução temporal da expectativa de vida
+
+O gráfico de média global por ano mostra:
+
+- **Tendência claramente crescente** entre 2000 e 2015.  
+- Aumento de aproximadamente **4 anos** no período analisado.  
+- Crescimento acelerado entre **2005 e 2011**.  
+- Leve desaceleração após 2011, mas ainda positiva.
+
+```{r}
+dados |>
+  group_by(ano) |>
+  summarise(media_expectativa = mean(expectativa_vida, na.rm = TRUE)) |>
+  ggplot(aes(x = ano, y = media_expectativa)) +
   geom_line() +
   geom_point() +
   labs(
     x     = "Ano",
-    y     = "Expectativa de vida média",
+    y     = "Expectativa de vida média (anos)",
     title = "Evolução temporal da expectativa de vida (média global)"
   )
-```
-```{r echo = FALSE}
-# Evolucao temporal por Status_Pais
-le_ano_status <- dados %>%
-  mutate(
-    Status_Pais = dplyr::recode(
-      Status_Pais,
-      "Developing" = "Em desenvolvimento",
-      "Developed"  = "Desenvolvidos"
-    )
-  ) %>%
-  group_by(Ano, Status_Pais) %>%
-  summarise(
-    media_le = mean(Expectativa_Vida, na.rm = TRUE),
-    .groups  = "drop"
-  )
 
-ggplot(le_ano_status, aes(x = Ano, y = media_le, color = Status_Pais)) +
+
+```
+
+## Evolução temporal por status do país
+
+O gráfico da página 7 mostra que:
+
+- Ambos os grupos apresentam crescimento claro.  
+- Países desenvolvidos começam em ~78 anos e chegam a >80 anos.  
+- Países em desenvolvimento começam em ~65 anos e chegam a ~70 anos.  
+- **A distância entre os grupos permanece praticamente constante.**
+
+A ausência de convergência sugere que melhorias absolutas ocorrem, mas diferenças estruturais profundas (renda, desigualdade, sistemas de saúde) impedem que países emergentes alcancem rapidamente os níveis dos desenvolvidos.
+
+```{r}
+dados |>
+  group_by(ano, status_pais) |>
+  summarise(media_expectativa = mean(expectativa_vida, na.rm = TRUE),
+            .groups = "drop") |>
+  ggplot(aes(x = ano, y = media_expectativa, group = status_pais, color = status_pais)) +
   geom_line() +
-  geom_point() +
   labs(
     x     = "Ano",
-    y     = "Expectativa de vida media",
-    color = "Status do pais",
-    title = "Evolução da expectativa de vida por status do pais"
+    y     = "Expectativa de vida média(anos)",
+    color = "Status do país",
+    title = "Evolução da expectativa de vida por status do país"
   ) +
   scale_y_continuous(
     expand = expansion(mult = c(0.4, 0.4))  # aumenta a margem vertical e "aproxima" as linhas
   ) +
   theme_minimal()
 
+#já excluimos ano, após termos usado
+
+dados <- dados %>%
+  dplyr::select(-ano)
 ```
 
-Os graficos temporais mostram uma tendencia de aumento da expectativa de vida ao longo dos anos para ambos os grupos de paises, com nivel consistentemente mais alto entre os paises desenvolvidos.
+
+##Valores Faltantes (NA)
+Antes da modelagem, é essencial avaliar a presença de **valores faltantes (NA)**, pois modelos
+de regressão linear não lidam automaticamente com dados ausentes. A Tabela 3 resume as
+proporções de NA por variável e por status do país.
+
+Variáveis com **≥ 5% de NA** incluem:
+- **alcool**
+- **hepatitis_b**
+- **despesa_total**
+- **pib**
+- **populacao**
+- **composicao_renda_recursos**
+- **escolaridade**
+
+As diferenças entre países desenvolvidos e em desenvolvimento existem, mas **não são suficientemente grandes para sugerir viés sistemático**.
+```         
+<!-- #Calcular NAs -->
+```
 
 ```{r echo = FALSE}
-# Comparacao da expectativa de vida por status do pais
-resumo_status <- dados %>%
-  group_by(Status_Pais) %>%
-  summarise(
-    n       = sum(!is.na(Expectativa_Vida)),
-    media   = mean(Expectativa_Vida, na.rm = TRUE),
-    sd      = sd(Expectativa_Vida, na.rm = TRUE),
-    min     = min(Expectativa_Vida, na.rm = TRUE),
-    q1      = quantile(Expectativa_Vida, 0.25, na.rm = TRUE),
-    mediana = median(Expectativa_Vida, na.rm = TRUE),
-    q3      = quantile(Expectativa_Vida, 0.75, na.rm = TRUE),
-    max     = max(Expectativa_Vida, na.rm = TRUE),
+na_por_var <- dados |>
+  summarise(across(everything(), ~ sum(is.na(.)))) |>
+  pivot_longer(
+    everything(),
+    names_to = "variavel",
+    values_to = "na_total"
+  ) |>
+  mutate(percentual = 100 * na_total / nrow(dados))
+
+tabela = na_por_var %>% filter(percentual > 0.05)
+knitr::kable(tabela,  caption = "Proporção de valores faltantes por coluna",
+             format = "markdown", digits = 3)
+
+```
+
+**Decisão adotada:**  
+Remover variáveis com alta proporção de NA e, em seguida, remover apenas observações restantes com NA nas variáveis finais (**listwise deletion**).  
+Essa abordagem preserva a consistência e evita introduzir incerteza de imputações artificiais.
+
+
+```{r variaveis_muito_na, echo=FALSE}
+# Limiar para considerar "NA significativo"
+limiar_na <- 0.05  # 5%; mude aqui se quiser outro valor
+
+# Reaproveita o objeto na_por_var (ou recria, se preferir)
+na_por_var <- dados |>
+  summarise(across(everything(), ~ sum(is.na(.)))) |>
+  tidyr::pivot_longer(
+    everything(),
+    names_to  = "variavel",
+    values_to = "na_total"
+  ) |>
+  mutate(percentual = na_total / nrow(dados))
+
+variaveis_com_muito_na <- na_por_var |>
+  filter(percentual >= limiar_na) |>
+  pull(variavel)
+
+# variaveis_com_muito_na
+
+```
+
+```{r missings_por_status_filtrado, message=FALSE, warning=FALSE}
+missings_status <- dados |>
+  tidyr::pivot_longer(
+    cols      = -status_pais,
+    names_to  = "variavel",
+    values_to = "valor"
+  ) |>
+  dplyr::group_by(status_pais, variavel) |>
+  dplyr::summarise(
+    prop_na = mean(is.na(valor)),
     .groups = "drop"
   )
 
+missings_status_signif <- missings_status |>
+  dplyr::filter(variavel %in% variaveis_com_muito_na)
+
 kable(
-  resumo_status,
-  caption = "Resumo da expectativa de vida por status do pais",
-  digits  = 2
+  missings_status_signif,
+  digits  = 3,
+  caption = paste0(
+    "Proporção de valores faltantes por status do país ",
+    "(apenas variáveis com proporção de NA $\\geq$ ",
+    limiar_na * 100, "\\%)"
+  )
+) |>
+  kable_styling(full_width = FALSE)
+
+### duas tabelas lado a lado para comparacao
+
+kables(
+  list(
+  
+      kable(missings_status_signif, caption = "Tabela 1 - Dados Faltantes") %>%
+      kable_styling(bootstrap_options = c("striped", "hover")),
+    
+    kable(missings_status_signif, caption = "Tabela 2 - Categorização") %>%
+      
+      kable_styling(bootstrap_options = c("striped", "hover"))
+  )
+) %>%
+  kable_styling(full_width = FALSE)
+
+####
+
+```
+
+```{r duas_tabelas, echo=FALSE, results='asis'}
+
+library(knitr)
+library(kableExtra)
+
+# Tabela da esquerda
+tab1 <- kable(
+  tabela_pdf,
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Modelo Stepwise",
+  col.names = c("Variável", "Estimativa", "Erro Padrão", "t", "p")
+) %>% 
+  kable_styling(font_size = 7)
+
+# Tabela da direita (exemplo, substitua pela sua)
+tab2 <- kable(
+  tabela_pdf,
+  format = "latex",
+  booktabs = TRUE,
+  caption = "Outra Tabela",
+  col.names = c("Col1", "Col2", "Col3")
+) %>%
+  kable_styling(font_size = 7)
+
+# Duas tabelas lado a lado com minipage
+cat("
+\\begin{table}[H]
+\\begin{minipage}{0.48\\linewidth}
+", tab1, "
+\\end{minipage}
+\\hfill
+\\begin{minipage}{0.48\\linewidth}
+", tab2, "
+\\end{minipage}
+\\end{table}
+")
+
+```
+
+
+
+
+
+```{r}
+
+# Cria uma dummy numerica para status de pais desenvolvido
+dados_cor <- dados |>
+  dplyr::mutate(
+    status_desenvolvido = dplyr::if_else(
+      status_pais == "Desenvolvido", 1L, 0L
+    )
+  ) |>
+  dplyr::select(where(is.numeric))  # apenas variaveis numericas
+
+# Matriz de correlacao entre variaveis numericas (incluindo a dummy)
+cor_num <- cor(dados_cor, use = "pairwise.complete.obs")
+
+cor_com_resposta <- cor_num |>
+  as.data.frame() |>
+  tibble::rownames_to_column("variavel") |>
+  dplyr::select(variavel, expectativa_vida) |>
+  dplyr::arrange(dplyr::desc(abs(expectativa_vida)))
+
+kable(
+  cor_com_resposta,
+  caption = "Correlacao de cada variavel numerica com a resposta",
+  digits  = 3
+) |>
+  kable_styling(full_width = FALSE)
+
+```
+
+
+## Correlações entre variáveis
+
+A Tabela 4 apresenta a correlação de cada preditor com a variável **Expectativa_Vida**. Os maiores valores absolutos incluem:
+
+- **Escolaridade** (r = 0.752)  
+- **Composicao_Renda_Recursos** (r = 0.725)  
+- **Mortalidade_Adulto** (r = −0.696)  
+- **HIV_AIDS** (r = −0.557)  
+- **IMC** (r = 0.568)  
+
+
+
+```{r}
+# Matriz de correlacao apenas dos preditores (sem a resposta)
+cor_pred <- cor(
+  dados %>% 
+    dplyr::select(-expectativa_vida) %>% 
+    dplyr::select(where(is.numeric)),
+  use = "pairwise.complete.obs"
+)
+
+cor_long <- as.data.frame(cor_pred) %>%
+  dplyr::mutate(var1 = rownames(cor_pred)) %>%
+  tidyr::pivot_longer(
+    cols      = -var1,
+    names_to  = "var2",
+    values_to = "cor"
+  ) %>%
+  dplyr::filter(var1 < var2) %>%          # evita duplicados e diagonal
+  dplyr::arrange(dplyr::desc(abs(cor)))
+
+# Limiar de correlacao "forte"
+limiar <- 0.7
+
+cor_fortes <- cor_long %>%
+  dplyr::filter(abs(cor) >= limiar)
+
+kable(
+  cor_fortes,
+  caption = paste0(
+    "Pares de variaveis numericas com correlacao forte (|r| >= ", limiar, ")"
+  ),
+  digits  = 3
+) %>%
+  kable_styling(full_width = FALSE)
+
+
+dados <- dados |> mutate(magreza = (magreza_1_19_anos + magreza_5_9_anos) / 2)
+
+
+```
+
+## Pares com alta colinearidade (Tabela 5)
+
+A matriz de correlação indica pares com **|r| ≥ 0.7**, incluindo:
+
+- **Mortalidade_Infantil × Mortes_Menores_Cinco_Anos** (r = 0.997)  
+- **Magreza_1_19 × Magreza_5_9** (r = 0.939)  
+- **Percentual_Despesa × PIB** (r = 0.899)  
+- **Escolaridade × Composicao_Renda_Recursos** (r = 0.800)
+
+### Decisão adotada
+As variáveis **Magreza_1_19** e **Magreza_5_9** foram combinadas em um único indicador **magreza**, reduzindo redundância e melhorando estabilidade do modelo.
+
+```{r}
+## 3. Matriz de correlação para subconjunto de variáveis  
+
+vars_corr <- dados %>%
+  dplyr::select(
+    expectativa_vida,
+    mortalidade_adulto,
+    alcool,
+    percentual_despesa,
+    imc,
+    poliomielite,
+    difteria,
+    hiv_aids,
+    composicao_renda_recursos,
+    escolaridade,
+    magreza
+  ) %>%
+  tidyr::drop_na(expectativa_vida)
+
+
+cor_mat <- cor(vars_corr, use = "pairwise.complete.obs")
+
+ggcorrplot(
+  cor_mat,
+  lab       = TRUE,
+  lab_size  = 2.5,
+  type      = "lower",
+  show.diag = TRUE
+) +
+  labs(
+    title = "Matriz de correlação das variáveis selecionadas"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
+
+
+```
+
+
+
+#Modelagem
+
+## Seleção de variáveis e preparação para modelagem
+
+Após remover variáveis com muitos NA e lidar com colinearidade:
+
+- A base final para modelagem passou de **2938 para 2562 observações**.
+- O número de preditores ficou reduzido a **11 variáveis** no modelo completo.
+
+
+```{r echo = FALSE}
+# Variaveis com baixa correlacao (|cor| < 0,3) com a resposta
+vars_baixa_cor <- cor_com_resposta %>%
+  dplyr::filter(abs(expectativa_vida) < 0.3) %>%
+  dplyr::pull(variavel)
+
+# Conjunto de variaveis a excluir:
+# - baixa correlacao com a resposta
+# - exclusoes decididas a priori (pib, populacao, hepatitis_b)
+vars_excluir_cor <- union(
+  vars_baixa_cor,
+  c("pib", "populacao", "hepatitis_b")
+)
+
+# Construcao da base de modelagem:
+# - cria Magreza_media como media das duas faixas etarias
+# - remove variaveis originais de magreza
+# - remove PIB, Populacao, Hepatite_B (nomes reais: pib, populacao, hepatitis_b)
+#   e demais variaveis pouco associadas a resposta
+dados_modelo <- dados %>%
+  dplyr::select(
+    -magreza_1_19_anos,
+    -magreza_5_9_anos
+  ) %>%
+  dplyr::select(-dplyr::any_of(vars_excluir_cor))
+
+dim_dados_modelo <- dim(dados_modelo)
+
+kable(
+  tibble::tibble(
+    Linhas  = dim_dados_modelo[1],
+    Colunas = dim_dados_modelo[2]
+  ),
+  caption = "Dimensoes da base de dados para modelagem"
+) %>%
+  kable_styling(full_width = FALSE)
+
+``` 
+
+Após o pré-processamento, a base de dados final para modelagem passou a conter **2562 observações** e **11 variáveis preditoras**. O primeiro modelo ajustado foi um **modelo de regressão linear múltipla completo**, contendo todas as variáveis selecionadas.
+
+Os principais resultados do modelo completo foram:
+
+- **R² = 0.8223**, indicando excelente capacidade explicativa.  
+- **R² ajustado = 0.8216**, reforçando que o modelo não está superajustado.  
+- A maioria dos coeficientes apresentou **alta significância estatística**.  
+- O erro padrão residual foi de **3.97 anos**, o que é razoável em dados de países.
+
+**Interpretação inicial:**  
+
+Um R² acima de **0.80** é raro em estudos comparativos internacionais de saúde. Isso mostra que o conjunto de variáveis escolhidas captura grande parte da variação observada entre países, reforçando a relevância dos determinantes analisados.
+
+
+```{r echo = FALSE}
+# Base de modelagem sem NA nas variaveis usadas no modelo
+dados_modelo_comp <- dados_modelo %>%
+  dplyr::select(
+    expectativa_vida,
+    mortalidade_adulto,
+    alcool,
+    percentual_despesa,
+    imc,
+    poliomielite,
+    difteria,
+    hiv_aids,
+    composicao_renda_recursos,
+    escolaridade,
+    magreza
+  ) %>%
+  tidyr::drop_na()
+
+kable(
+  tibble::tibble(
+    Linhas_originais = nrow(dados_modelo),
+    Linhas_sem_NA    = nrow(dados_modelo_comp),
+    Colunas          = ncol(dados_modelo_comp)
+  ),
+  caption = "Comparacao entre base de modelagem original e base completa sem NA"
 ) %>%
   kable_styling(full_width = FALSE)
 ```
 
 
-
-
-
-A identificacao de pares de preditores com **alta correlacao** e importante para evitar problemas de multicolinearidade na regressao. Nesse contexto, destaca-se o par formado por **Magreza_1_19_Anos** e **Magreza_5_9_Anos**, que apresentam correlacao elevada entre si e medem fenomenos muito proximos (magreza em faixas etarias infantis semelhantes).
-
-
-
-
-<!-- ### Matriz de correlacao para um subconjunto de variaveis -->
-
 ```{r echo = FALSE}
-vars_corr <- dados %>%
-  select(
-    Expectativa_Vida,
-    Mortalidade_Adulto,
-    Mortalidade_Infantil,
-    IMC,
-    HIV_AIDS,
-    PIB,
-    Composicao_Renda_Recursos,
-    Escolaridade,
-    Magreza_1_19_Anos,
-    Magreza_5_9_Anos
-  ) %>%
-  drop_na(Expectativa_Vida)
-# 
- cor_mat <- cor(vars_corr, use = "pairwise.complete.obs")
+# Modelo completo com todas as variaveis explicativas
+modelo_completo <- lm(
+  expectativa_vida ~ mortalidade_adulto +
+    alcool +
+    percentual_despesa +
+    imc +
+    poliomielite +
+    difteria +
+    hiv_aids +
+    composicao_renda_recursos +
+    escolaridade +
+    magreza,
+  data = dados_modelo_comp
+)
 
-ggcorrplot(
-  method = "square",
-  show.diag = TRUE,
-  cor_mat,
-  type = "upper",
-  lab = TRUE,
-  lab_size = 2,
-  tl.cex = 10,           
-  tl.srt = 45,          
-  digits = 2 ,
-  colors = cores_base,
-  outline.color = "black",
-  title = "Matriz de Correlação"
-) + theme(plot.title = element_text(hjust = 0.5, face = "bold", color = "#1A4A7A"),
-    axis.text.x = element_text(angle = 45, hjust = 1))
+summary(modelo_completo)
 ```
 
-A matriz de correlacao para esse subconjunto reforca a interpretacao de que:
 
-- a expectativa de vida esta fortemente associada a fatores de mortalidade, nutricionais e socioeconomicos;
-- Magreza_1_19_Anos e Magreza_5_9_Anos sao fortemente correlacionadas entre si, justificando a criacao de um indicador sintetico para a fase de modelagem.
+## Avaliação de Multicolinearidade (VIF)
+
+A Tabela 8 apresenta os **Fatores de Inflação da Variância (VIF)**. Nenhuma variável apresentou VIF > 5, e todas ficaram abaixo de 3.5.
+
+> **Conclusão:**  
+> Não há multicolinearidade severa.  
+> O modelo é estável e os coeficientes podem ser interpretados com confiança.
+
+Variáveis com maior VIF:
+- **Escolaridade** (3.46)  
+- **Composicao_Renda_Recursos** (2.76)
+
+Isso já era esperado, pois ambas refletem condições socioeconômicas relacionadas, mas os valores permanecem dentro de faixas aceitáveis.
+
+
+```{r}
+# VIF do modelo completo
+vif_completo <- car::vif(modelo_completo)
+
+vif_completo_df <- tibble::tibble(
+  Variavel = names(vif_completo),
+  VIF      = as.numeric(vif_completo)
+) %>%
+  arrange(desc(VIF))
+
+knitr::kable(
+  vif_completo_df,
+  caption = "Fatores de inflacao da variancia (VIF) - modelo completo",
+  digits  = 2
+)
+
+```
+
+
+## Seleção do modelo via Stepwise (AIC)
+
+Para aprimorar parcimônia e comparar desempenho, foi realizado um procedimento **stepwise bidirecional** baseado no critério de informação de Akaike (AIC). O modelo selecionado removeu apenas a variável **alcool**, resultando em:
+
+- **Menor AIC e BIC**  
+- **R² ajustado ligeiramente maior**  
+- Clareza interpretativa aprimorada
+
+O modelo final selecionado inclui:
+
+- **mortalidade_adulto**  
+- **percentual_despesa**  
+- **imc**  
+- **poliomielite**  
+- **difteria**  
+- **hiv_aids**  
+- **composicao_renda_recursos**  
+- **escolaridade**  
+- **magreza**
 
 
 
-## Construcao pratica da base de modelagem
+```{r step-aic}
+modelo_step <- stepAIC(modelo_completo, direction = "both", trace = FALSE)
+summary(modelo_step)
+```
 
-Com base nas informacoes de NA e de correlacao, adotamos duas decisoes para a construcao da base de modelagem:
 
-1. **Exclusao de Populacao e Hepatite_B**: ambas apresentaram **alta proporcao de valores faltantes** e **correlacao fraca com Expectativa_Vida**, de modo que sua inclusao no modelo reduziria o numero de casos disponiveis sem trazer ganho relevante de explicacao.
 
-2. **Combinacao de Magreza_1_19_Anos e Magreza_5_9_Anos em Magreza**: as duas variaveis sao altamente correlacionadas e representam a mesma dimensao (magreza infantil em faixas etarias proximas). Para reduzir dimensionalidade e multicolinearidade, definimos uma unica variavel:
+```{r tabela_stepwise, echo=FALSE, results='asis'}
+library(broom)
+library(dplyr)
+library(knitr)
+library(kableExtra)
 
-<!-- $begin:math:display$ -->
-<!-- \\text\{Magreza\\\_media\} \= \\frac\{\\text\{Magreza\\\_1\\\_19\\\_Anos\} \+ \\text\{Magreza\\\_5\\\_9\\\_Anos\}\}\{2\}\. -->
-<!-- $end:math:display$ -->
+tabela_pdf <- tidy(modelo_step) %>%
+  mutate(
+    term = case_when(
+      term == "(Intercept)" ~ "Intercepto",
+      term == "mortalidade_adulto" ~ "Mortalidade Adulto",
+      term == "percentual_despesa" ~ "Percentual Despesa",
+      term == "imc" ~ "IMC",
+      term == "poliomielite" ~ "Poliomielite",
+      term == "difteria" ~ "Difteria",
+      term == "hiv_aids" ~ "HIV/AIDS",
+      term == "composicao_renda_recursos" ~ "Composição de Renda/Recursos",
+      term == "escolaridade" ~ "Escolaridade",
+      term == "magreza" ~ "Magreza",
+      TRUE ~ term
+    ),
+    p.value = round(p.value, 6),
+    estimate = round(estimate, 4),
+    std.error = round(std.error, 4),
+    statistic = round(statistic, 4)
+  )
 
-<!-- Na base de modelagem, utilizamos apenas **Magreza_media**, mantendo as variaveis originais apenas para a analise exploratoria. -->
+kable(tabela_pdf,
+      format = "latex",
+      booktabs = TRUE,
+      caption = "Coeficientes Estimados do Modelo Stepwise",
+      col.names = c("Variável", "Estimativa", "Erro Padrão", "Estatística t", "Valor-p")
+) %>%
+  kable_styling(latex_options = c("hold_position"))
+
+
+```
+
+
+Guardamos a fórmula selecionada para referência:
+
+```{r formula-step}
+formula(modelo_step)
+```
+
+
+## Conclusão parcial da modelagem
+
+O modelo final apresenta:
+
+- excelente ajuste (**R² > 0.82**)  
+- coeficientes consistentes com literatura epidemiológica  
+- variáveis estatisticamente significativas e substantivamente relevantes  
+- ausência de multicolinearidade relevante  
+
+Esses resultados sustentam a robustez da análise e permitem avançar para os diagnósticos do modelo.
+
+
+```{r ic-coef-classico}
+ic_classico <- confint(modelo_step)
+coefs <- cbind(Estimate = coef(modelo_step), ic_classico)
+
+# Passa para data.frame e puxa o nome das linhas para uma coluna
+coefs_df <- as.data.frame(coefs)
+coefs_df$Termo <- rownames(coefs_df)
+rownames(coefs_df) <- NULL
+
+# Evita linha começando com "(Intercept)"
+coefs_df$Termo[coefs_df$Termo == "(Intercept)"] <- "Intercepto"
+
+# Reorganiza colunas: primeiro o nome do termo
+coefs_df <- coefs_df[, c("Termo", "Estimate", "2.5 %", "97.5 %")]
+
+# Nomes das colunas compatíveis com LaTeX (\% em vez de %)
+names(coefs_df)[names(coefs_df) == "2.5 %"]  <- "2.5 \\%"
+names(coefs_df)[names(coefs_df) == "97.5 %"] <- "97.5 \\%"
+
+kable(
+  coefs_df,
+  digits  = 3,
+  caption = "Coeficientes do modelo stepwise (IC 95\\%, erros-padrão clássicos)"
+) %>%
+  kable_styling(full_width = FALSE)
+```
+
+
+## Diagnósticos do modelo
+
+A análise diagnóstica é fundamental para verificar se os pressupostos da regressão linear múltipla
+são razoavelmente atendidos. Os gráficos de diagnóstico (resíduos vs ajustados, Q–Q plot,
+Scale–Location e alavancagem) fornecem uma visão ampla do comportamento dos resíduos.
+
+### Resíduos vs Valores Ajustados
+
+O gráfico indica:
+
+- **Variância heterogênea** em diferentes níveis de valores ajustados;  
+- Leve padrão curvilíneo, sugerindo possibilidade de não linearidade residual.
+
+
+
+### Q–Q Plot dos resíduos
+
+O Q–Q plot mostra leve desvio da normalidade nas extremidades (caudas), indicando a presença de outliers ou distribuições mais pesadas do que o normal.
+
+
+
+### Scale–Location (Resíduos Padronizados vs Ajustados)
+
+O gráfico reforça a evidência de **heterocedasticidade**, com aumento da variância dos resíduos em valores ajustados mais altos.
+
+
+
+```{r diagnostico-1}
+par(mfrow = c(2, 2))
+plot(modelo_step)
+par(mfrow = c(1, 1))
+```
+
+## Teste de heterocedasticidade (Breusch–Pagan)
+
+O teste Breusch–Pagan resultou em:
+
+- **BP = 329.97**  
+- **p < 2.2e-16**
+
+> **Conclusão formal:**  
+> Há **heterocedasticidade significativa**.  
+> Portanto, utilizar **erros-padrão robustos** é essencial para garantir validade da inferência.
+
+```{r bptest}
+bptest(modelo_step)
+```
+
+## Erros-padrão robustos (HC)
+
+Para lidar com a heterocedasticidade, foram estimados erros-padrão robustos do tipo **HC1**.  
+Os coeficientes permaneceram praticamente iguais, mas os erros-padrão e valores *t* foram ajustados.
+
+```{r robust-se}
+library(sandwich)
+vcov_hc <- sandwich::vcovHC(modelo_step, type = "HC1")
+coefs_robustos <- lmtest::coeftest(modelo_step, vcov. = vcov_hc)
+coefs_robustos
+```
+
+# Distâncias de Cook (Influência)
+
+A análise das **Distâncias de Cook** mostra diversos pontos com valores mais altos, indicando
+observações influentes.
+
+Esses pontos correspondem a países com condições extremas, tais como:
+
+- epidemias severas (ex.: HIV intenso),  
+- conflitos armados,  
+- crises humanitárias,  
+- variações abruptas na cobertura vacinal,  
+- valores populacionais atípicos.
+
+
+```{r ic-robustos}
+se_rob <- sqrt(diag(vcov_hc))
+est    <- coef(modelo_step)
+
+ic_rob <- cbind(
+  est - 1.96 * se_rob,
+  est + 1.96 * se_rob
+)
+colnames(ic_rob) <- c("2.5 %", "97.5 %")
+
+rob_df <- as.data.frame(ic_rob)
+rob_df$Estimate <- est
+rob_df$Termo    <- rownames(rob_df)
+rownames(rob_df) <- NULL
+
+# Evita "(Intercept)" como primeiro caractere da linha
+rob_df$Termo[rob_df$Termo == "(Intercept)"] <- "Intercepto"
+
+# Organiza colunas
+rob_df <- rob_df[, c("Termo", "Estimate", "2.5 %", "97.5 %")]
+
+# Ajusta nomes das colunas para LaTeX
+names(rob_df)[names(rob_df) == "2.5 %"]  <- "2.5 \\%"
+names(rob_df)[names(rob_df) == "97.5 %"] <- "97.5 \\%"
+
+kable(
+  rob_df,
+  digits  = 3,
+  caption = "Coeficientes com IC 95\\% usando erros-padrão robustos (HC1)"
+) %>%
+  kable_styling(full_width = FALSE)
+
+## Pontos influentes e leverage
+
+# ```{r cooks-distance}
+cooks <- cooks.distance(modelo_step)
+
+plot(cooks, type = "h",
+     ylab = "Cook's distance",
+     main = "Distâncias de Cook")
+abline(h = 4/length(cooks), lty = 2)
+
+which(cooks > 4/length(cooks))
+```
+
 

@@ -1,6 +1,6 @@
-# 📈 ME613 - Análise de Regressão Linear (Unicamp)
+# 📈 ME613 - Análise de Regressão  
 
-Este repositório contém os materiais e códigos desenvolvidos na disciplina **ME613 - Análise de Regressão Linear** da Unicamp.  
+Este repositório contém os materiais e códigos desenvolvidos na disciplina **ME613 - Análise de Regressão** da Unicamp.  
 Aqui serão organizados scripts, exercícios e exemplos práticos, com foco em aprendizado e aplicação dos principais conceitos da disciplina.
 
 ---
@@ -13,11 +13,3 @@ Aqui serão organizados scripts, exercícios e exemplos práticos, com foco em a
 
 ---
 
-<!-- ## 📂 Estrutura do Repositório
-```bash
-📁 ME613-Analise-Regressao-Linear
- ┣ 📄 README.md                # Documentação do repositório
- ┣ 📁 scripts                  # Códigos em R/Python
- ┣ 📁 dados                    # Conjuntos de dados utilizados
- ┣ 📁 resultados               # Saídas (gráficos, tabelas, relatórios)
- ┗ 📁 exercicios               # Resolução de listas e trabalhos -->
